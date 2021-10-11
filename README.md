@@ -28,19 +28,35 @@ R Markdown file detailing code for estimating transitions between different stat
 Dataset including information for legume species scraped from multiple papers and calculated in our own paper. Details on what data is included in each column is listed below. 
 
 areaIntroduced – The total area of the species introduced range. 
+
 areaIntroducedScaled – The total area of the introduced range for each legume species was mean-centred and scaled by the standard deviation. 
+
 areaNative – The total area of the species native range. 
+
 areaNativeScale – The total area of the native range for each legume species was mean-centred and scaled by the standard deviation. 
+
 NumIntroduced – Number of ranges each species has been introduced to. Range data was calculated by Simonsen et al. 2017. 
+
 Fixer – The 0s in the data represent legume species that do not form nodules with rhizobia and 1s represent species that do form nodules with rhizobia. Data was taken from Werner et al. 2014. 
+
 numOTUs – Number of total rhizobia OTUs associated with each legume species calculated by Harrison et al. 2018. 
+
 numGenera – Number of total rhizobia genera associated with each legume species. Data from Andrews & Andrews 2017. 
+
 Specialist – The 1s in the dataset represents species that only associate with one rhizobia genus (specialists) and 0s represents species that associate with multiple rhizobia genera (generalists). 
+
 Human_Uses – Number of human uses associated with each legume species. Data from Simonsen et al. 2018. 
+
 AbsLatNative – The absolute value of the midpoint value of the species native range. 
+
 LatNative – The value of the midpoint value of the species native range. 
+
 ChromosomeCount – Total number of chromosomes in the species genomes (including copies). 
+
 PloidyLow – Lowest base chromosome number used to calculate ploidy by genus. 
+
 diPloidyLow – Ploidy levels calculated from genus-level base chromosome values. The 0s represent diploids and 1s represent polyploids. 
+
 sfPloidy – Base chromosome number acquired on subfamily level (Caesalpinioideae, Mimosoideae, and Papilionoideae) 
+
 disfPloidy – Ploidy levels calculated from subfamily-level base chromosome values. The 0s represent diploids and 1s represent polyploids. 
