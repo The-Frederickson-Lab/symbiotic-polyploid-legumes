@@ -62,9 +62,11 @@ We also added symbiotic species to our Fixer column if we had data from Harrison
 # If diPloidyLow (genus-level ploidy) is available use it and if not then use disfPloidy (subfamily)
 # If there is data for NumGenera or OTUs then call the associating legume species a fixer 
 ploidy1<-ploidy%>% 
+  rownames_to_column() %>%
   mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy, diPloidyLow)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
-  mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) 
+  mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
+  column_to_rownames()
 
 ```
 
