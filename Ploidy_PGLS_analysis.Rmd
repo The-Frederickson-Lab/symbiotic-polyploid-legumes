@@ -1,0 +1,313 @@
+---
+title: "PGLS analysis"
+author: "Tia Harrison"
+date: "`r format(Sys.Date())`"
+output: html_document 
+---
+
+## Overall setup
+
+### Global setup, load relevant packages 
+
+```{r setup, include=FALSE}
+
+# Global setup
+knitr::opts_chunk$set(echo = TRUE)
+
+# Packages 
+library(tidyverse)
+library(car)
+library(lsmeans)
+library(lme4)
+library(MASS)
+library(ape)
+library(caper)
+library(inauguration)
+library(ggpubr)
+library(plotrix)
+library(nlme)
+
+# Set contrasts 
+options(contrasts=c("contr.sum", "contr.poly")) 
+
+```
+
+### Dataset 
+
+## Ploidy dataset and phylogeny 
+
+The spreadsheet contains information about the symbiotic status (Fixer column) of the legume species where 1 indicates a legume that forms nodules with rhizobia (symbiotic) and where 0 indicates a plant that forms no association with rhizobia (nonsymbiotic). The diPloidyLow column indicates whether plant species are diploids (coded as 0) or polyploid (coded as 1). The diPloidyLow values were calculated from genus-level data. The Num_Introduced column indicates how many separate ranges a plant species has been introduced to. 
+
+The phylogeny used in this analysis is a version of the Zanne et al (2014) angiosperm phylogeny where the full phylogeny was pruned for the species in our dataset. 
+
+
+```{r}
+# Dataset 
+ploidy<- read.csv("Legume_ploidy_dataset.csv", row.names=1)
+
+# Phylogeny 
+legumes1<-read.tree("Vascular_Plants_rooted.dated.tre")
+
+```
+
+
+## Clean up the dataset
+
+Here, we create a new column called "NewPloidy" which indicates diploidy (0) and polyploidy (1) but was calculated from a combination of genus and subfamily level data. 
+
+We also added symbiotic species to our Fixer column if we had data from Harrison et al. 2018 that suggested those species associated with a rhizobium genus or OTU. 
+
+```{r}
+
+# If diPloidyLow (genus-level ploidy) is available use it and if not then use disfPloidy (subfamily)
+# If there is data for NumGenera or OTUs then call the associating legume species a fixer 
+ploidy1<-ploidy%>% 
+  mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy, diPloidyLow)) %>%
+  mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
+  mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) 
+
+```
+
+
+## Prune the dataset and tree 
+
+```{r}
+# Make sure the data and tree match up 
+TreeOnly <- setdiff(legumes1$tip.label, rownames(ploidy1))
+DataOnly <- setdiff(rownames(ploidy1), legumes1$tip.label)
+
+# Prune the tree 
+pruned <- drop.tip(legumes1, TreeOnly)
+pruned$node.label <- NULL
+
+# Get the tip names 
+tip_names<-data.frame(pruned$tip.label)
+
+# Filter the dataset for tree species 
+ploidy_data<-ploidy1 %>%
+  filter(rownames(ploidy1) %in% tip_names$pruned.tip.label) 
+
+# Set columns as factors for analysis 
+# Set Species as its own column
+ploidy_data1 <- ploidy_data %>%
+  rownames_to_column("Species") %>%
+  mutate(Fixer=as.factor(Fixer), 
+         numGenera=as.factor(numGenera), 
+         Specialist=as.factor(Specialist), 
+         diPloidyLow=as.factor(diPloidyLow), 
+         NewPloidy=as.factor(NewPloidy))
+
+# Data summary for genus level ploidy 
+ploidy_data1 %>%
+  filter(!is.na(diPloidyLow) & !is.na(Num_Introduced) & !is.na(Fixer)) %>%
+  group_by(diPloidyLow, Fixer) %>%
+  tally()
+
+# Data summary for subfamily level ploidy data 
+ploidy_data1 %>%
+  filter(!is.na(NewPloidy) & !is.na(Num_Introduced) & !is.na(Fixer)) %>%
+  group_by(NewPloidy, Fixer) %>%
+  tally()
+
+```
+
+## Data analysis 
+
+### Correlation tests 
+
+We looked at the correlation between subfamily base chromosome number and genus base chromosome number to determine how similar our two datasets are. 
+
+```{r}
+
+# Spearman's rank correlation 
+# Ties present so don't compute exact p value 
+cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="spearman", exact=FALSE)
+
+# Kendall tau correlation to deal with ties 
+cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="kendall")
+
+```
+
+
+### PGLS analyses on the genus-level ploidy data 
+
+We performed all analyses on our two datasets separately: genus level ploidy data and subfamily level ploidy data. 
+
+```{r}
+
+# Combine data and tree for analysis 
+combined_data <- comparative.data(phy = pruned, data = ploidy_data1, names.col = Species, vcv.dim = 3, vcv=TRUE, na.omit = FALSE, warn.dropped = TRUE)
+
+# Run the model with covariates for symbiotic status  
+model_genus <- pgls(Num_Introduced ~ diPloidyLow*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data = combined_data, lambda = "ML")
+
+# Inspect the model 
+plot(model_genus)
+summary(model_genus)
+anova(model_genus)
+
+
+# Run the model for specificity on rhizobia 
+model_genus_spec <- pgls(Num_Introduced ~ diPloidyLow*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data = combined_data, lambda = "ML")
+
+# Inspect the model 
+plot(model_genus_spec)
+summary(model_genus_spec)
+anova(model_genus_spec)
+
+```
+
+
+### PGLS on the genus + subfamily level ploidy data 
+
+```{r}
+
+# Run the model with covariates for symbiotic status 
+model_sub <- pgls(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data = combined_data, lambda = "ML")
+
+# Inspect the model 
+plot(model_sub)
+summary(model_sub)
+anova(model_sub)
+
+
+# Run the model with covariates for specificity on rhizobia 
+model_sub_spec <- pgls(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data = combined_data, lambda = "ML")
+
+# Inspect the model 
+plot(model_sub_spec)
+summary(model_sub_spec)
+anova(model_sub_spec)
+
+```
+
+
+## Plotting the results 
+
+### Interaction of ploidy and symbiosis in genus level data 
+
+```{r}
+
+# Prep the data for plotting 
+# Calculate raw means and standard error for plot 
+ploidy_data_sum<- ploidy_data1 %>%
+  filter(!is.na(Fixer) & !is.na(diPloidyLow)) %>%
+  dplyr::group_by(diPloidyLow, Fixer) %>%
+  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
+
+# Get colours 
+ploidy_colours<-inauguration("inauguration_2021")
+
+# Reaction norm plot 
+genus_interaction<-ggplot(ploidy_data_sum, aes(x=Fixer, y=mean, fill=diPloidyLow)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
+  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
+  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
+  (ylab("Introduced ranges (no.)")) +
+  (xlab("Symbiotic state")) +
+  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
+  theme_classic() +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="top")
+
+# Prep data for specificity on rhizobia 
+ploidy_data_sum2<- ploidy_data1 %>%
+  filter(!is.na(Specialist) & !is.na(diPloidyLow)) %>%
+  dplyr::group_by(diPloidyLow, Specialist) %>%
+  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
+
+# Reaction norm for specificity 
+genus_spec<-ggplot(ploidy_data_sum2, aes(x=Specialist, y=mean, fill=diPloidyLow)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
+  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
+  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
+  (ylab("Introduced ranges (no.)")) +
+  (xlab("Specificity on rhizobia")) +
+  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
+  theme_classic() +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="top")
+
+# Combine the two plots 
+Figure_genus <- ggarrange(genus_interaction, genus_spec,
+                    labels=c("a", "b"), 
+                    ncol = 2, nrow=1,
+                    common.legend=TRUE, 
+                    legend = "top")
+Figure_genus
+
+```
+
+
+### Interaction of ploidy and symbiosis in genus+subfamily level data 
+
+```{r}
+# Prep the data for plotting 
+ploidy_sub_sum<- ploidy_data1 %>%
+  filter(!is.na(Fixer) & !is.na(NewPloidy)) %>%
+  dplyr::group_by(NewPloidy, Fixer) %>%
+  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
+
+# Reaction norm plot 
+sub_interaction<-ggplot(ploidy_sub_sum, aes(x=Fixer, y=mean, fill=NewPloidy)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
+  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
+  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
+  (ylab("Introduced ranges (no.)")) +
+  (xlab("Symbiotic state")) +
+  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
+  theme_classic() +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="top")
+
+# Prep data for specificity on rhizobia 
+ploidy_sub_spec<- ploidy_data1 %>%
+  filter(!is.na(Specialist) & !is.na(NewPloidy)) %>%
+  dplyr::group_by(NewPloidy, Specialist) %>%
+  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
+
+# Reaction norm for specificity 
+sub_spec<-ggplot(ploidy_sub_spec, aes(x=Specialist, y=mean, fill=NewPloidy)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
+  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
+  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
+  (ylab("Introduced ranges (no.)")) +
+  (xlab("Specificity on rhizobia")) +
+  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
+  theme_classic() +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="top")
+
+# Combine the two plots 
+Figure_sub <- ggarrange(sub_interaction, sub_spec,
+                    labels=c("a", "b"), 
+                    ncol = 2, nrow=1,
+                    common.legend=TRUE, 
+                    legend = "top")
+Figure_sub
+```
+
