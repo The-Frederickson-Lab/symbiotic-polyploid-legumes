@@ -40,10 +40,12 @@ ploidy<- read.csv("Legume_ploidy_dataset.csv", row.names=1)
 legumes1<-read.tree("Vascular_Plants_rooted.dated.tre")
 
 # Clean up the data 
-ploidy1<-ploidy%>% 
+ploidy1<-ploidy%>%
+  rownames_to_column() %>%
   mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy, diPloidyLow)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
-  mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) 
+  mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
+  column_to_rownames()
 
 ```
 
