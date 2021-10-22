@@ -23,6 +23,10 @@ R Markdown file detailing code to analyze the joint impacts of ploidy and symbio
 
 R Markdown file detailing code for estimating transitions between different states (diploid, polyploid, symbiotic, non-symbiotic) across the legume phylogeny.
 
+### Vascular_Plants_rooted.dated.tre
+
+The phylogeny from Zanne et al 2014 pruned to the legume species in our global dataset. 
+
 ### Legume_ploidy_dataset.csv
 
 Dataset including information for legume species scraped from multiple papers and calculated in our own paper. Details on what data is included in each column is listed below. 
