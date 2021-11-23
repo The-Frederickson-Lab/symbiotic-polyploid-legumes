@@ -328,6 +328,7 @@ qqline(resid(model_sub2))
 summary(model_sub2)
 Anova(model_sub2, type=3)
 # Ploidy estimates have the proper sign, interaction is non-significant, but fixer estimate is opposite to what is expected 
+# This might be different than what Megan gets 
 
 # Get means from the model 
 model_sub2_results<-lsmeans(model_sub2, pairwise~NewPloidy+Fixer, mode = "df.error")
@@ -370,6 +371,7 @@ plot(sub_genus_lm)
 summary(sub_genus_lm)
 Anova(sub_genus_lm, type=3) 
 # Ploidy estimate sign is correct, Fixer sign is opposite to what is expected, and interaction is non-significant 
+# Without the phylogeny the estimate for fixer status is different 
 
 # Run simple linear model for specificity on rhizobia 
 model_sub_spec_lm<-lm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1)
@@ -380,6 +382,7 @@ plot(model_sub_spec_lm) # QQ plot looks pretty good with raw values
 # Test for significance 
 summary(model_sub_spec_lm)
 Anova(model_sub_spec_lm, type=3) 
+
 # Ploidy estimate sign is correct, fixer sign is opposite, significant interaction 
 
 ```
