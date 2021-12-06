@@ -56,11 +56,11 @@ We also added symbiotic species to our Fixer column if we had data from Harrison
 
 ```{r}
 
-# If diPloidyLow (genus-level ploidy) is available use it and if not then use disfPloidy (subfamily)
+# If diPloidyLow (genus-level ploidy) is available use it and if not then use disfPloidy_corrected (subfamily with some species double checked in the literature)
 # If there is data for NumGenera or OTUs then call the associating legume species a fixer 
 ploidy1<-ploidy%>% 
   rownames_to_column() %>%
-  mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy, diPloidyLow)) %>% 
+  mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy_corrected, diPloidyLow)) %>% 
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
   column_to_rownames()
@@ -158,7 +158,6 @@ add_spp %>%
 We looked at the correlation between subfamily base chromosome number and genus base chromosome number to determine how similar our two datasets are. 
 
 ```{r}
-
 # Spearman's rank correlation 
 # Ties present so we didn't compute exact p value 
 cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="spearman", exact=FALSE)
@@ -169,96 +168,16 @@ cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="kendall")
 ```
 
 
-### PGLS analyses on genus-level ploidy data
-
-We performed all analyses on our two datasets separately: genus level ploidy data and subfamily level ploidy data. We tested the hypothesis that ploidy and symbiotic status interact to impact range expansion using pgls models with the nlme package. 
-
-```{r}
-# Check that names in data and tree match  
-name.check(ploidy_data1, pruned) # Says names are ok 
-
-# Run pgls and allow lambda to vary in symbiotic status 
-model_genus2<-gls(log(Num_Introduced+1) ~ diPloidyLow*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
-
-# Inspect model fit 
-plot(model_genus2)
-qqnorm(resid(model_genus2))
-qqline(resid(model_genus2))
-
-# Test for signficance 
-summary(model_genus2)
-Anova(model_genus2, type=3) 
-# Ploidy and fixer estimates are as expected based on the raw data
-# The interaction is non-significant 
-
-# Grab means from the model 
-model_genus2_results<-lsmeans(model_genus2, pairwise ~ diPloidyLow + Fixer, mode = "df.error")
-model_genus2_results<- data.frame(model_genus2_results$lsmeans)
-
-
-# Run pgls for specificity on rhizobia 
-model_genus_spec2<-gls(log(Num_Introduced+1) ~ diPloidyLow*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
-
-# Inspect model fit 
-plot(model_genus_spec2)
-qqnorm(resid(model_genus_spec2))
-qqline(resid(model_genus_spec2))
-
-# Test for significance 
-summary(model_genus_spec2)
-Anova(model_genus_spec2, type=3)
-# Ploidy estimate has the expected sign but the specialist estimate sign is opposite of what is expected 
-# Interaction term is significant in this model 
-
-# Grab the means from the model 
-model_genus_spec2_results<-lsmeans(model_genus_spec2, pairwise~diPloidyLow+Specialist, mode = "df.error")
-model_genus_spec2_results<- data.frame(model_genus_spec2_results$lsmeans)
-model_genus_spec2_results
-
-```
-
-### PGLS analyses on genus-level ploidy data with simple linear model 
-Run the data through a model without the phylogenetic correction to see how much the phylogenetic differences between species impacts the overall results. 
-
-```{r}
-
-# Run linear model on symbiotic status 
-model_genus_lm<-lm(log(Num_Introduced+1) ~ diPloidyLow*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1)
-
-# Inspect model fit 
-plot(model_genus_lm)
-
-# Test for signficance 
-summary(model_genus_lm)
-Anova(model_genus_lm, type =3) 
-# The sign of the ploidy estimate is as expexted but symbiotic status is opposite to what is expected without the phylogenetic correction 
-# Interaction non-significant 
-
-# Run simple linear model for specificity on rhizobia 
-model_genus_spec_lm<-lm(Num_Introduced ~ diPloidyLow*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1)
-
-# Inspect model fit 
-plot(model_genus_spec_lm) # QQ plot looks pretty good with raw values 
-
-# Test for significance 
-summary(model_genus_spec_lm)
-Anova(model_genus_spec_lm, type=3) 
-# Ploidy estimate sign is as expected, specialist sign is still opposite to what is expected
-# Interaction is signficant 
-
-```
-
 ### PGLS on the genus + subfamily level ploidy data  
+We performed our anlayses on the genus + subfamily dataset since it had the most data points in each category of data (diploid non-symbiotic, diploid symbiotic, polyploid non-symbiotic, and polyploid symbiotic). We tested the hypothesis that ploidy and symbiotic status or rhizobia specificity interact to impact range expansion using pgls models with the nlme package. 
 
-Here we are testing the same hypothesis that ploidy and symbiotic status or rhizobia specificity impact range expansion. This dataset has more data points in each category of data. 
-
-If having trouble getting the model to converge try setting different values for lambda (0, 1, or 0.5). 
+In the PGLS model if you are having trouble getting the model to converge try setting different values for lambda (0, 1, or 0.5). 
 If changing lambda doesn't work try this code to get convergence in the model: 
 control=glsControl(opt="optim",optimMethod="Nelder-Mead") 
 
 ```{r}
 # Run pgls and allow lambda to vary in symbiotic status
-model_sub2<-gls(log(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub2)
@@ -267,7 +186,7 @@ qqline(resid(model_sub2))
 
 # Test for significance 
 summary(model_sub2)
-Anova(model_sub2, type=3)
+Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
 # Ploidy estimates have the expected sign, interaction is non-significant, but fixer estimate is opposite to what is expected 
 
 # Get means from the model 
@@ -276,7 +195,7 @@ model_sub2_results<-data.frame(model_sub2_results$lsmeans)
 
 
 # Run pgls for specificity on rhizobia 
-model_sub_spec2<-gls(log(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
 
 # Inspect model fit 
 plot(model_sub_spec2)
@@ -285,7 +204,7 @@ qqline(resid(model_sub_spec2))
 
 # Test for significance 
 summary(model_sub_spec2)
-Anova(model_sub_spec2, type=3)
+Anova(model_sub_spec2, contrasts=list(topic=contr.sum), type=3)
 # Ploidy estimate sign is correct, specialist estimate is opposite sign as to what expected, interaction is significant 
 
 # Grab the model means 
@@ -296,38 +215,7 @@ model_sub_spec2_results<-data.frame(model_sub_spec2_results$lsmeans)
 ```
 
 
-### PGLS analyses on genus+subfamily level ploidy data with simple linear model 
-
-Run the expanded dataset through a model without the phylogenetic correction. 
-
-```{r}
-
-# Run linear model on symbiotic status 
-sub_genus_lm<-lm(log(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1)
-
-# Inspect model fit 
-plot(sub_genus_lm)
-
-# Test for signficance 
-summary(sub_genus_lm)
-Anova(sub_genus_lm, type=3) 
-# Ploidy estimate sign is correct, Fixer sign is opposite to what is expected, and interaction is non-significant 
-
-# Run simple linear model for specificity on rhizobia 
-model_sub_spec_lm<-lm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data1)
-
-# Inspect model fit 
-plot(model_sub_spec_lm) # QQ plot looks pretty good with raw values 
-
-# Test for significance 
-summary(model_sub_spec_lm)
-Anova(model_sub_spec_lm, type=3) 
-
-# Ploidy estimate sign is correct, fixer sign is opposite, significant interaction 
-
-```
-
-### Analyzing the non-symbiotic species 
+### Analyzing the non-symbiotic and symbiotic species separately
 
 Here we subset the data to only the non-symbiotic species in the combined genus+subfamily dataset to look for an effect of ploidy on invasion. 
 
@@ -337,8 +225,8 @@ ploidy_data_non <- ploidy_data1 %>%
   filter(Fixer == 0)
 ploidy_data_non # Reduces the dataset to 68 species and two categories (diploid and polyploid)
 
-# Run pgls and allow lambda to vary in symbiotic status
-model_sub_non<-gls(log(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data_non, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+# Run pgls and allow lambda to vary
+model_sub_non<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_non, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub_non)
@@ -347,199 +235,34 @@ qqline(resid(model_sub_non)) # This looks pretty ok with the raw data but maybe 
 
 # Test for significance 
 summary(model_sub_non)
-Anova(model_sub_non, type=3)
+Anova(model_sub_non, type=3,  contrasts=list(topic=contr.sum))
 # Not significant but the estimate is in the direction we would expect and is getting close to significance (p = 0.0977)
-```
+# Maybe this can be reported as marginally significant? 
 
-### Analyzing the generalist species 
 
-Here we filter the dataset for the species that are generalists and look for an impact of ploidy on range expansion. 
+# Subset the data to symbiotic species 
+ploidy_data_sym <- ploidy_data1 %>%
+  filter(Fixer == 1)
+ploidy_data_sym
 
-```{r}
-# Subset the data to generalist species 
-ploidy_data_gen <- ploidy_data1 %>%
-  filter(Specialist == 0 & !is.na(Num_Introduced))
-ploidy_data_gen # Reduced data to 43 species 
-
-# Set the model 
-model_sub_gen<-gls(Num_Introduced ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses, data=ploidy_data_gen, correlation=corPagel(value=1, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+# Run pgls and allow lambda to vary 
+model_sub_sym<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
-plot(model_sub_gen)
-qqnorm(resid(model_sub_gen))
-qqline(resid(model_sub_gen)) # This looks good 
+plot(model_sub_sym)
+qqnorm(resid(model_sub_sym))
+qqline(resid(model_sub_sym))
 
 # Test for significance 
-summary(model_sub_gen)
-Anova(model_sub_gen, type=3)
-# Overall conclusion that generalists only spread to more places around the globe when they are polyploids not diploids 
-# Diploids restrict range limit severely 
+summary(model_sub_sym)
+Anova(model_sub_sym, type=3,  contrasts=list(topic=contr.sum))
 
 ```
 
 
 ## Plotting the results 
 
-### Plot symbiotic status 
-Plot the difference means of symbiotic and non-symbiotic ranges to see if this dataset captures results from Simonsen et al (2017). 
-
-Our results (which is a subsetted dataset) do look like the non-symbiotic species are introduced to more ranges just like in Simonsen et al 2017. 
-
-```{r}
-# Quick plot of symbiotic status 
-ggplot(ploidy_data1, aes(x=Fixer, y=Num_Introduced)) +
-  geom_boxplot() + 
-  theme_classic()
-
-```
-
-### Plot specificity on rhizobia 
-Plot the difference in ranges between specialist plants and generalist plants. 
-
-Our subsetted dataset also suggest that overall generalist plants are introduced to more ranges overall (like in Harrison et al 2018). 
-
-```{r}
-# Quick plot of specificity on rhizobia 
-ploidy_data1 %>% 
-  filter(!is.na(Specialist)) %>%
-  ggplot(aes(x=Specialist, y=Num_Introduced)) +
-  geom_boxplot() + 
-  theme_classic()
-
-```
-
-### Interaction of ploidy and symbiosis in genus level data 
-
-Plot the means and standard error calculated from the raw data. 
-
-```{r}
-
-# Prep the data for plotting 
-# Calculate raw means and standard error for plot 
-ploidy_data_sum<- ploidy_data1 %>%
-  filter(!is.na(Fixer) & !is.na(diPloidyLow)) %>%
-  dplyr::group_by(diPloidyLow, Fixer) %>%
-  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
-
-# Get colours 
-ploidy_colours<-inauguration("inauguration_2021")
-
-# Reaction norm plot 
-genus_interaction<-ggplot(ploidy_data_sum, aes(x=Fixer, y=mean, fill=diPloidyLow)) + 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (no.)")) +
-  (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Prep data for specificity on rhizobia 
-ploidy_data_sum2<- ploidy_data1 %>%
-  filter(!is.na(Specialist) & !is.na(diPloidyLow)) %>%
-  dplyr::group_by(diPloidyLow, Specialist) %>%
-  dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
-
-# Reaction norm for specificity 
-genus_spec<-ggplot(ploidy_data_sum2, aes(x=Specialist, y=mean, fill=diPloidyLow)) + 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (no.)")) +
-  (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Combine the two plots 
-Figure_genus <- ggarrange(genus_interaction, genus_spec,
-                    labels=c("a", "b"), 
-                    ncol = 2, nrow=1,
-                    common.legend=TRUE, 
-                    legend = "top")
-Figure_genus
-
-```
-
-### PGLS interaction of ploidy and symbiosis in genus level data
-
-The means and standard error values plotted here are taken from the pgls model (nlme model) from our analyses. 
-
-```{r}
-
-# Prep the model output 
-model_genus2_results <- model_genus2_results %>%
-  mutate(diPloidyLow=as.factor(diPloidyLow)) %>%
-  mutate(Fixer=as.factor(Fixer))
-
-# Plot the model means 
-genus_interaction2<-ggplot(model_genus2_results, aes(x=Fixer, y=lsmean, fill=diPloidyLow)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (log)")) +
-  (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Prep the model output 
-model_genus_spec2_results <- model_genus_spec2_results %>%
-  mutate(diPloidyLow=as.factor(diPloidyLow)) %>%
-  mutate(Specialist=as.factor(Specialist))
-
-# Plot the model means 
-genus_spec2<-ggplot(model_genus_spec2_results, aes(x=Specialist, y=lsmean, fill=diPloidyLow)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=diPloidyLow), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (log)")) +
-  (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Combine the two plots 
-Figure_genus2 <- ggarrange(genus_interaction2, genus_spec2,
-                    labels=c("a", "b"), 
-                    ncol = 2, nrow=1,
-                    common.legend=TRUE, 
-                    legend = "top")
-Figure_genus2
-
-```
-
-
-### Interaction of ploidy and symbiosis in genus+subfamily level data 
+### Raw genus+subfamily level data 
 
 Here we plot the means and standard error calculated from the raw data in the expanded dataset (more data points in each category). 
 
@@ -601,7 +324,7 @@ Figure_sub <- ggarrange(sub_interaction, sub_spec,
 Figure_sub
 ```
 
-### PGLS interaction of ploidy and symbiosis in genus+subfamily level data
+### PGLS interaction of ploidy and symbiosis 
 
 The means and standard deviation plotted here are output from the pgls models in our analyses. 
 
@@ -665,6 +388,59 @@ Figure_sub2
 ```
 
 
+### Plot symbiotic and non-symbiotic results separately
+
+Here we are plotting the raw data for just the symbiotic species and just the non-symbiotic species.
+
+```{r}
+# Plot just the non-symbiotic species 
+non_plot<-ploidy_data1 %>% 
+  filter(Fixer==0) %>%
+  ggplot(aes(x=NewPloidy, y=log(Num_Introduced+1), fill=NewPloidy)) +
+  geom_boxplot(colour="grey42") + 
+  theme_classic() + 
+  (ylab("Introduced ranges (log)")) +
+  (xlab("Ploidy level")) +
+  scale_x_discrete(labels=c("1" = "Polyploid", "0" = "Diploid"), limits=c("1", "0")) +
+  scale_fill_manual(values=ploidy_colours[c(6,4)]) +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="none")
+non_plot
+
+# Plot just the symbiotic species 
+sym_plot<-ploidy_data1 %>% 
+  filter(Fixer==1) %>%
+  ggplot(aes(x=NewPloidy, y=log(Num_Introduced+1), fill=NewPloidy)) +
+  geom_boxplot(colour="grey42") + 
+  theme_classic() + 
+  (ylab("Introduced ranges (log)")) +
+  (xlab("Ploidy level")) +
+  scale_x_discrete(labels=c("1" = "Polyploid", "0" = "Diploid"), limits=c("1", "0")) +
+  scale_fill_manual(values=ploidy_colours[c(6,4)]) +
+  theme(axis.title.x = element_text(size=13), 
+        axis.title.y = element_text(size=13), 
+        axis.text.y= element_text(size=12), 
+        axis.text.x= element_text(size=12),
+        legend.title= element_text(size=12), 
+        legend.text=element_text(size=12), 
+        legend.position="none")
+sym_plot
+
+
+# Combine the plots for supplemental file 
+Figure_supp <- ggarrange(non_plot, sym_plot,
+                    labels=c("a", "b"), 
+                    ncol = 2, nrow=1,
+                    common.legend=TRUE, 
+                    legend = "none")
+Figure_supp
+
+```
 
 
 
