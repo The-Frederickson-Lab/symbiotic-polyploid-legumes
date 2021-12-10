@@ -42,7 +42,7 @@ legumes1<-read.tree("Vascular_Plants_rooted.dated.tre")
 # Clean up the data 
 ploidy1<-ploidy%>%
   rownames_to_column() %>%
-  mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy, diPloidyLow)) %>%
+  mutate(NewPloidy = ifelse(is.na(diPloidyLow), disfPloidy_corrected, diPloidyLow)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
   column_to_rownames()
@@ -50,39 +50,10 @@ ploidy1<-ploidy%>%
 ```
 
 
-### Pruning for genus level ploidy data 
+### Pruning for the genus + subfamily level ploidy data  
 
 We pruned the Zanne et al (2014) angiosperm phylogeny for legume species in our dataset.
 
-
-```{r}
-
-# Remove all NAs from the data for the relevant columns 
-ploidy_genus <- ploidy1 %>% 
-  filter(!is.na(Fixer), !is.na(diPloidyLow))
-
-# Make sure the data and tree match up 
-TreeOnly <- setdiff(legumes1$tip.label, rownames(ploidy_genus))
-DataOnly <- setdiff(rownames(ploidy_genus), legumes1$tip.label)
-
-# Prune the tree 
-genus_tree <- drop.tip(legumes1, TreeOnly)
-genus_tree$node.label <- NULL
-
-# Get the tip names 
-tip_names<-data.frame(genus_tree$tip.label)
-
-# Filter the dataset for tree species 
-ploidy_genus2<-ploidy_genus %>%
-  rownames_to_column("Species") %>%
-  filter(Species %in% tip_names$genus_tree.tip.label) %>%
-  dplyr::select(Species, Fixer, diPloidyLow)
-
-
-```
-
-
-### Pruning for the genus + subfamily level ploidy data  
 
 ```{r}
 # Remove all NAs from the data for the relevant columns 
@@ -109,7 +80,7 @@ ploidy_sub2<-ploidy_sub %>%
 ```
 
 
-## Estimating state transitions on genus-level ploidy data 
+## Estimating state transitions on subfamily and genus level ploidy data 
 
 ### Simple model 
 
@@ -123,17 +94,17 @@ Traits:
 4 = mutualist polyploid 
 
 ```{r}
+
 # Simple model with two traits and no hidden states 
-MK_genus_simple<- corHMM(phy=genus_tree, data=ploidy_genus2, rate.cat=1)
+MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
 
 # Look at the results of the model 
-MK_genus_simple
-plotMKmodel(MK_genus_simple)
+MK_sub_simple
+plotMKmodel(MK_sub_simple)
 
 ```
 
-
-### Hidden state model
+### Hidden states model 
 
 We included rate.cat=2 to specify hidden states in the model. This model with hidden states performed better than the model with no hidden states and so it is reported in the manuscript. 
 
@@ -151,38 +122,6 @@ R2 = rate category 2
 ```{r}
 
 # Two traits and hidden states model 
-MK_genus_hidden<- corHMM(phy=genus_tree, data=ploidy_genus2, rate.cat=2)
-
-# Look at the results of the model 
-MK_genus_hidden
-plotMKmodel(MK_genus_hidden, display = "row")
-
-```
-
-## Estimating state transitions on subfamily and genus level ploidy data 
-
-### Simple model 
-
-Running the same simple model as above on the subfamily/genus combination of ploidy data. 
-
-```{r}
-
-# Simple model with two traits and no hidden states 
-MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
-
-# Look at the results of the model 
-MK_sub_simple
-plotMKmodel(MK_sub_simple)
-
-```
-
-### Hidden states model 
-
-Running the same hidden states model as above on the subfamily/genus combination of ploidy data. 
-
-```{r}
-
-# Two traits and hidden states model 
 MK_sub_hidden<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=2)
 
 # Look at the results of the model 
@@ -193,9 +132,9 @@ plotMKmodel(MK_sub_hidden, display = "row")
 
 ## Visualization of transitions
 
-### Genus level ploidy data 
+### Prep data for visualization 
 
-Plotting the transition rates from the hidden state model for the genus level ploidy data.
+Pick 8 colours for plotting the different transitions on the tree and re-label to the corresponding states for ploidy and symbiosis. 
 
 ```{r}
 
@@ -214,21 +153,6 @@ state_colours8<-setNames(c("#cd3341", "#749dae", "#5445b1", "#372421", "#50506D"
 # Colours and labels for the legend
 legend_colours<-setNames(c("#cd3341", "#749dae", "#5445b1", "#372421", "#50506D", "#465952", "#f3c483", "#855F4C"),
                          c("non-symbiotic, diploid, R1", "non-symbiotic, polyploid, R1", "symbiotic, diploid, R1", "symbiotic, polyploid, R1", "non-symbiotic, diploid, R2", "non-symbiotic, polyploid, R2", "symbiotic, diploid, R2", "symbiotic, polyploid, R2")) 
-
-
-# Extract the data from the model 
-phy_genus_hidden = MK_genus_hidden$phy
-data_genus_hidden = MK_genus_hidden$data
-model_genus_hidden = MK_genus_hidden$solution
-model_genus_hidden[is.na(model_genus_hidden)] <- 0
-diag(model_genus_hidden) <- -rowSums(model_genus_hidden)
-
-# Run to get simmap 
-simmap_genus_hidden <- makeSimmap(tree = phy_genus_hidden, data = data_genus_hidden, model = model_genus_hidden, rate.cat = 2)
-
-# Import phytools plotSimmap for plotting
-phytools::plotSimmap(simmap_genus_hidden[[1]], colors=state_colours8, fsize = 0.05, type="fan")
-phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 
 
 ```
