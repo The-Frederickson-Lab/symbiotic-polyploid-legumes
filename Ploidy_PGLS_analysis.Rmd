@@ -132,6 +132,11 @@ ploidy_data1 %>%
   group_by(NewPloidy, Fixer) %>%
   tally()
 
+# Average number of human uses in specialists
+ploidy_data1 %>%
+filter(!is.na(Specialist) & !is.na(Human_Uses) & !is.na(NewPloidy)) %>%
+  group_by(Specialist, NewPloidy) %>%
+  summarize(mean(Human_Uses))
 ```
 
 ## Comparison of genus level and genus+subfamily data 
@@ -148,6 +153,18 @@ add_spp %>%
 add_spp %>% 
   group_by(Fixer, NewPloidy) %>%
   summarize(mean(Num_Introduced))
+
+# Average number of ranges in the species that are based on subfamily values 
+add_spp %>%
+  filter(is.na(diPloidyLow) & !is.na(disfPloidy_corrected)) %>%
+  summarize(mean(Num_Introduced)) # 4.2742 
+
+# Average number of ranges in the species that are based on genus values 
+ploidy_data1 %>%
+  filter(!is.na(NewPloidy) & !is.na(diPloidyLow) & !is.na(Fixer) & !is.na(Num_Introduced)) %>%
+  summarize(mean(Num_Introduced)) # 5.262048
+
+  
 ```
 
 
@@ -186,7 +203,7 @@ qqline(resid(model_sub2))
 
 # Test for significance 
 summary(model_sub2)
-Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
+Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3) # Type 3 for interaction and contrasts set 
 # Ploidy estimates have the expected sign, interaction is non-significant, but fixer estimate is opposite to what is expected 
 
 # Get means from the model 
@@ -235,7 +252,7 @@ qqline(resid(model_sub_non)) # This looks pretty ok with the raw data but maybe 
 
 # Test for significance 
 summary(model_sub_non)
-Anova(model_sub_non, type=3,  contrasts=list(topic=contr.sum))
+Anova(model_sub_non, type=2,  contrasts=list(topic=contr.sum)) # Type 2 anova 
 # Not significant but the estimate is in the direction we would expect and is getting close to significance (p = 0.0977)
 # Maybe this can be reported as marginally significant? 
 
@@ -255,7 +272,7 @@ qqline(resid(model_sub_sym))
 
 # Test for significance 
 summary(model_sub_sym)
-Anova(model_sub_sym, type=3,  contrasts=list(topic=contr.sum))
+Anova(model_sub_sym, type=2,  contrasts=list(topic=contr.sum))
 
 ```
 
