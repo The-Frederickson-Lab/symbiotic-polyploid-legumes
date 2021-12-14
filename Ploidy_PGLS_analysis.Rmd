@@ -134,9 +134,10 @@ ploidy_data1 %>%
 
 # Average number of human uses in specialists
 ploidy_data1 %>%
-filter(!is.na(Specialist) & !is.na(Human_Uses) & !is.na(NewPloidy)) %>%
+  filter(!is.na(Specialist) & !is.na(Human_Uses) & !is.na(NewPloidy)) %>%
   group_by(Specialist, NewPloidy) %>%
   summarize(mean(Human_Uses))
+
 ```
 
 ## Comparison of genus level and genus+subfamily data 
