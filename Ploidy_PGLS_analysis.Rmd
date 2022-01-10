@@ -3,6 +3,8 @@ title: "PGLS analysis"
 author: "Tia Harrison"
 date: "`r format(Sys.Date())`"
 output: html_document 
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Overall setup
@@ -26,6 +28,8 @@ library(ggpubr)
 library(plotrix)
 library(nlme)
 library(geiger)
+library(lmtest)
+library(sandwich)
 
 ```
 
@@ -195,7 +199,7 @@ control=glsControl(opt="optim",optimMethod="Nelder-Mead")
 
 ```{r}
 # Run pgls and allow lambda to vary in symbiotic status
-model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub2)
@@ -211,6 +215,31 @@ Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3) # Type
 model_sub2_results<-lsmeans(model_sub2, pairwise~NewPloidy+Fixer, mode = "df.error")
 model_sub2_results<-data.frame(model_sub2_results$lsmeans)
 
+#Lambda is negative, so no phylogenetic clustering of trait
+#Therefore compare to a phylogenetically uncorrected model
+
+#Let's start with a Poisson model
+model_poisson <- glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="poisson")
+
+#Inspect model fit
+plot(model_poisson) #Fit isn't awesome
+qqnorm(resid(model_poisson))
+qqline(resid(model_poisson))
+
+summary(model_poisson) #Probably not correct because of over-dispersion
+coeftest(model_poisson, vcov = sandwich) #Recompute Wald tests using sandwich standard errors, and it's likely more correct
+
+#Quasipoisson model for number of introductions is probably preferrable given over-dispersion
+model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
+
+#Inspect model fit
+plot(model_qpoisson) #Fit isn't awesome
+qqnorm(resid(model_qpoisson))
+qqline(resid(model_qpoisson))
+
+summary(model_qpoisson)
+coeftest(model_qpoisson, vcov = sandwich) 
+Anova(model_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
 
 # Run pgls for specificity on rhizobia 
 model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
@@ -229,6 +258,28 @@ Anova(model_sub_spec2, contrasts=list(topic=contr.sum), type=3)
 model_sub_spec2_results<-lsmeans(model_sub_spec2, pairwise~NewPloidy+Specialist, mode = "df.error")
 model_sub_spec2_results<-data.frame(model_sub_spec2_results$lsmeans)
 
+#Fit Poisson model for specificity 
+model_spec_poisson <- glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="poisson")
+
+#Inspect model fit
+plot(model_spec_poisson) #Fit isn't terrible
+qqnorm(resid(model_spec_poisson))
+qqline(resid(model_spec_poisson))
+
+summary(model_spec_poisson) 
+coeftest(model_spec_poisson, vcov = sandwich) #Recompute Wald tests using sandwich standard errors, and it's likely more correct
+
+#Quasipoisson model for number of introductions is probably preferrable given over-dispersion
+model_spec_qpoisson <-glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
+
+#Inspect model fit
+plot(model_spec_qpoisson) 
+qqnorm(resid(model_spec_qpoisson))
+qqline(resid(model_spec_qpoisson))
+
+summary(model_spec_qpoisson)
+coeftest(model_spec_qpoisson, vcov = sandwich) 
+Anova(model_spec_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
 
 ```
 
@@ -298,7 +349,7 @@ sub_interaction<-ggplot(ploidy_sub_sum, aes(x=Fixer, y=mean, fill=NewPloidy)) +
   geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
   (ylab("Introduced ranges (no.)")) +
   (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+ # scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
@@ -322,7 +373,7 @@ sub_spec<-ggplot(ploidy_sub_spec, aes(x=Specialist, y=mean, fill=NewPloidy)) +
   geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
   (ylab("Introduced ranges (no.)")) +
   (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+ # scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
@@ -361,7 +412,7 @@ sub_interaction2<-ggplot(model_sub2_results, aes(x=Fixer, y=lsmean, fill=NewPloi
   geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
   (ylab("Introduced ranges (log)")) +
   (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+#  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
@@ -384,7 +435,7 @@ sub_spec2<-ggplot(model_sub_spec2_results, aes(x=Specialist, y=lsmean, fill=NewP
   geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
   (ylab("Introduced ranges (log)")) +
   (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
+# scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
@@ -420,7 +471,7 @@ non_plot<-ploidy_data1 %>%
   (ylab("Introduced ranges (log)")) +
   (xlab("Ploidy level")) +
   scale_x_discrete(labels=c("1" = "Polyploid", "0" = "Diploid"), limits=c("1", "0")) +
-  scale_fill_manual(values=ploidy_colours[c(6,4)]) +
+#  scale_fill_manual(values=ploidy_colours[c(6,4)]) +
   theme(axis.title.x = element_text(size=13), 
         axis.title.y = element_text(size=13), 
         axis.text.y= element_text(size=12), 
@@ -439,7 +490,7 @@ sym_plot<-ploidy_data1 %>%
   (ylab("Introduced ranges (log)")) +
   (xlab("Ploidy level")) +
   scale_x_discrete(labels=c("1" = "Polyploid", "0" = "Diploid"), limits=c("1", "0")) +
-  scale_fill_manual(values=ploidy_colours[c(6,4)]) +
+ # scale_fill_manual(values=ploidy_colours[c(6,4)]) +
   theme(axis.title.x = element_text(size=13), 
         axis.title.y = element_text(size=13), 
         axis.text.y= element_text(size=12), 
