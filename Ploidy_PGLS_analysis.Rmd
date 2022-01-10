@@ -199,7 +199,7 @@ control=glsControl(opt="optim",optimMethod="Nelder-Mead")
 
 ```{r}
 # Run pgls and allow lambda to vary in symbiotic status
-model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub2)
@@ -223,8 +223,6 @@ model_poisson <- glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativ
 
 #Inspect model fit
 plot(model_poisson) #Fit isn't awesome
-qqnorm(resid(model_poisson))
-qqline(resid(model_poisson))
 
 summary(model_poisson) #Probably not correct because of over-dispersion
 coeftest(model_poisson, vcov = sandwich) #Recompute Wald tests using sandwich standard errors, and it's likely more correct
@@ -234,8 +232,6 @@ model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativ
 
 #Inspect model fit
 plot(model_qpoisson) #Fit isn't awesome
-qqnorm(resid(model_qpoisson))
-qqline(resid(model_qpoisson))
 
 summary(model_qpoisson)
 coeftest(model_qpoisson, vcov = sandwich) 

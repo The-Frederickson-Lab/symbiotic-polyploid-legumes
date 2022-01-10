@@ -311,7 +311,7 @@ model: control=glsControl(opt=“optim”,optimMethod=“Nelder-Mead”)
 
 ``` r
 # Run pgls and allow lambda to vary in symbiotic status
-model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0.5, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub2)
@@ -335,40 +335,40 @@ summary(model_sub2)
     ##   Model: log10(Num_Introduced + 1) ~ NewPloidy * Fixer + AbsLatNative +      areaNativeScale + Human_Uses + annual 
     ##   Data: ploidy_data1 
     ##        AIC      BIC    logLik
-    ##   654.9941 701.9768 -317.4971
+    ##   620.9571 667.9398 -300.4786
     ## 
     ## Correlation Structure: corPagel
     ##  Formula: ~"Species" 
     ##  Parameter estimate(s):
-    ##     lambda 
-    ## 0.04424329 
+    ##      lambda 
+    ## -0.03124946 
     ## 
     ## Coefficients:
     ##                         Value  Std.Error   t-value p-value
-    ## (Intercept)        0.14718037 0.07306654  2.014333  0.0443
-    ## NewPloidy1         0.12862245 0.09270510  1.387437  0.1657
-    ## Fixer1             0.00204796 0.06006921  0.034093  0.9728
-    ## AbsLatNative      -0.00218817 0.00093790 -2.333055  0.0199
-    ## areaNativeScale   -0.04197123 0.01194299 -3.514299  0.0005
-    ## Human_Uses         0.18777460 0.00687942 27.295120  0.0000
-    ## annual             0.07353937 0.03344086  2.199087  0.0282
-    ## NewPloidy1:Fixer1 -0.11777689 0.09719271 -1.211787  0.2260
+    ## (Intercept)        0.08387605 0.06120062  1.370510  0.1709
+    ## NewPloidy1         0.17809690 0.09131827  1.950288  0.0515
+    ## Fixer1             0.06426204 0.05684181  1.130542  0.2586
+    ## AbsLatNative      -0.00260179 0.00081975 -3.173891  0.0016
+    ## areaNativeScale   -0.04593168 0.01158511 -3.964719  0.0001
+    ## Human_Uses         0.19222485 0.00646646 29.726431  0.0000
+    ## annual             0.10265290 0.03197498  3.210413  0.0014
+    ## NewPloidy1:Fixer1 -0.17000548 0.09604576 -1.770047  0.0771
     ## 
     ##  Correlation: 
     ##                   (Intr) NwPld1 Fixer1 AbsLtN arNtvS Hmn_Us annual
-    ## NewPloidy1        -0.469                                          
-    ## Fixer1            -0.753  0.561                                   
-    ## AbsLatNative      -0.250  0.058 -0.094                            
-    ## areaNativeScale    0.045  0.013 -0.056  0.111                     
-    ## Human_Uses        -0.259 -0.053  0.108  0.076 -0.366              
-    ## annual            -0.011  0.016 -0.042 -0.093 -0.034  0.078       
-    ## NewPloidy1:Fixer1  0.456 -0.952 -0.575 -0.077 -0.023  0.068 -0.032
+    ## NewPloidy1        -0.562                                          
+    ## Fixer1            -0.910  0.578                                   
+    ## AbsLatNative      -0.400  0.129  0.062                            
+    ## areaNativeScale    0.024  0.032  0.006  0.057                     
+    ## Human_Uses        -0.264 -0.113 -0.004  0.269 -0.338              
+    ## annual             0.072 -0.009 -0.110 -0.107 -0.031  0.075       
+    ## NewPloidy1:Fixer1  0.529 -0.955 -0.584 -0.142 -0.043  0.119  0.003
     ## 
     ## Standardized residuals:
     ##        Min         Q1        Med         Q3        Max 
-    ## -3.1933995 -0.4802500 -0.2610835  0.5827916  3.2760135 
+    ## -3.2303563 -0.5175336 -0.2188626  0.6245127  3.4243792 
     ## 
-    ## Residual standard error: 0.3616302 
+    ## Residual standard error: 0.3515668 
     ## Degrees of freedom: 811 total; 803 residual
 
 ``` r
@@ -379,14 +379,14 @@ Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3) # Type
     ## 
     ## Response: log10(Num_Introduced + 1)
     ##                 Df    Chisq Pr(>Chisq)    
-    ## (Intercept)      1   4.0575  0.0439745 *  
-    ## NewPloidy        1   1.9250  0.1653087    
-    ## Fixer            1   0.0012  0.9728027    
-    ## AbsLatNative     1   5.4431  0.0196453 *  
-    ## areaNativeScale  1  12.3503  0.0004409 ***
-    ## Human_Uses       1 745.0236  < 2.2e-16 ***
-    ## annual           1   4.8360  0.0278717 *  
-    ## NewPloidy:Fixer  1   1.4684  0.2255938    
+    ## (Intercept)      1   1.8783   0.170528    
+    ## NewPloidy        1   3.8036   0.051142 .  
+    ## Fixer            1   1.2781   0.258248    
+    ## AbsLatNative     1  10.0736   0.001504 ** 
+    ## areaNativeScale  1  15.7190  7.348e-05 ***
+    ## Human_Uses       1 883.6607  < 2.2e-16 ***
+    ## annual           1  10.3068   0.001325 ** 
+    ## NewPloidy:Fixer  1   3.1331   0.076719 .  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -408,13 +408,6 @@ plot(model_poisson) #Fit isn't awesome
 ```
 
 ![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->
-
-``` r
-qqnorm(resid(model_poisson))
-qqline(resid(model_poisson))
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-7.png)<!-- -->
 
 ``` r
 summary(model_poisson) #Probably not correct because of over-dispersion
@@ -479,14 +472,7 @@ model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativ
 plot(model_qpoisson) #Fit isn't awesome
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-8.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-9.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-10.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-11.png)<!-- -->
-
-``` r
-qqnorm(resid(model_qpoisson))
-qqline(resid(model_qpoisson))
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-12.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-7.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-8.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-9.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-10.png)<!-- -->
 
 ``` r
 summary(model_qpoisson)
@@ -574,14 +560,14 @@ model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNati
 plot(model_sub_spec2)
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-13.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-11.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_sub_spec2))
 qqline(resid(model_sub_spec2))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-14.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-12.png)<!-- -->
 
 ``` r
 # Test for significance 
@@ -661,14 +647,14 @@ model_spec_poisson <- glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative +
 plot(model_spec_poisson) #Fit isn't terrible
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-15.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-16.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-17.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-18.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-13.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-14.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-15.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-16.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_spec_poisson))
 qqline(resid(model_spec_poisson))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-19.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-17.png)<!-- -->
 
 ``` r
 summary(model_spec_poisson) 
@@ -733,14 +719,14 @@ model_spec_qpoisson <-glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative +
 plot(model_spec_qpoisson) 
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-20.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-21.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-22.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-23.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-18.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-19.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-20.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-21.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_spec_qpoisson))
 qqline(resid(model_spec_qpoisson))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-24.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-22.png)<!-- -->
 
 ``` r
 summary(model_spec_qpoisson)
@@ -5412,11 +5398,11 @@ model_sub2_results <- model_sub2_results %>%
 model_sub2_results
 ```
 
-    ##   NewPloidy Fixer    lsmean         SE  df  lower.CL  upper.CL
-    ## 1         0     0 0.3983174 0.06943741 801 0.2620166 0.5346181
-    ## 2         1     0 0.5269398 0.08509955 801 0.3598953 0.6939843
-    ## 3         0     1 0.4003653 0.04041725 801 0.3210291 0.4797015
-    ## 4         1     1 0.4112109 0.04564199 801 0.3216188 0.5008029
+    ##   NewPloidy Fixer    lsmean          SE  df  lower.CL  upper.CL
+    ## 1         0     0 0.3367708 0.055970915 801 0.2269038 0.4466378
+    ## 2         1     0 0.5148677 0.074081085 801 0.3694517 0.6602837
+    ## 3         0     1 0.4010329 0.009824514 801 0.3817480 0.4203177
+    ## 4         1     1 0.4091243 0.020295644 801 0.3692854 0.4489632
 
 ``` r
 # Plot the means 
