@@ -364,7 +364,7 @@ Here we subset the data to only the non-symbiotic species in the combined genus+
 # Subset the data to non-symbiotic species 
 ploidy_data_non <- ploidy_data1 %>%
   filter(Fixer == 0)
-ploidy_data_non # Reduces the dataset to 68 species and two categories (diploid and polyploid)
+# Reduces the dataset to 68 species and two categories (diploid and polyploid)
 
 # Run pgls and allow lambda to vary
 model_sub_non<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_non, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
@@ -382,7 +382,6 @@ Anova(model_sub_non, type=2,  contrasts=list(topic=contr.sum)) # Type 2 anova
 # Subset the data to symbiotic species 
 ploidy_data_sym <- ploidy_data1 %>%
   filter(Fixer == 1)
-ploidy_data_sym
 
 # Run pgls and allow lambda to vary 
 model_sub_sym<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
