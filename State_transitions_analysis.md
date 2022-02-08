@@ -1,11 +1,26 @@
 State transitions analysis
 ================
 Tia Harrison
-2022-01-20
+2022-02-07
 
 ## Overall setup
 
-### Global setup, load relevant packages
+### Setup
+
+### Load the packages for analysis
+
+``` r
+# Packages 
+library(tidyverse)
+library(corHMM)
+library(ape)
+library(expm)
+library(hablar)
+library(dplyr)
+library(phytools)
+library(devtools)
+library(inauguration)
+```
 
 ### Ploidy dataset and phylogeny
 
@@ -93,15 +108,15 @@ MK_sub_simple
 
     ## 
     ## Fit
-    ##       -lnL      AIC    AICc Rate.cat ntax
-    ##  -439.7148 895.4295 895.603        1  839
+    ##       -lnL      AIC     AICc Rate.cat ntax
+    ##  -439.7148 895.4296 895.6031        1  839
     ## 
     ## Rates
-    ##            (1,R1)      (2,R1)      (3,R1)      (4,R1)
-    ## (1,R1)         NA 0.018954239 0.005072482          NA
-    ## (2,R1) 0.03440833          NA          NA 0.004561596
-    ## (3,R1) 0.00236954          NA          NA 0.023474456
-    ## (4,R1)         NA 0.000000001 0.077509318          NA
+    ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)
+    ## (1,R1)          NA 0.018931090 0.005083729          NA
+    ## (2,R1) 0.034298446          NA          NA 0.004529596
+    ## (3,R1) 0.002368807          NA          NA 0.023372010
+    ## (4,R1)          NA 0.000000001 0.077214277          NA
     ## 
     ## Arrived at a reliable solution
 
@@ -109,7 +124,7 @@ MK_sub_simple
 plotMKmodel(MK_sub_simple)
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](State_transitions_analysis_files/figure-gfm/simple%20model-1.png)<!-- -->
 
 ### Hidden states model
 
@@ -142,27 +157,27 @@ MK_sub_hidden
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -388.9723 813.9446 814.7788        2  839
+    ##  -386.4806 808.9612 809.7954        2  839
     ## 
     ## Rates
-    ##             (1,R1)       (2,R1)      (3,R1)      (4,R1)      (1,R2)      (2,R2)
-    ## (1,R1)          NA 1.4291645132 0.000000001          NA 0.006423362          NA
-    ## (2,R1) 7.348182633           NA          NA 0.000000001          NA 0.006423362
-    ## (3,R1) 0.001580376           NA          NA 0.000000001          NA          NA
-    ## (4,R1)          NA 0.0007919703 0.000000001          NA          NA          NA
-    ## (1,R2) 0.024014729           NA          NA          NA          NA 0.032431450
-    ## (2,R2)          NA 0.0240147293          NA          NA 0.011605394          NA
-    ## (3,R2)          NA           NA 0.024014729          NA 0.004257555          NA
-    ## (4,R2)          NA           NA          NA 0.024014729          NA 0.000000001
-    ##             (3,R2)      (4,R2)
-    ## (1,R1)          NA          NA
-    ## (2,R1)          NA          NA
-    ## (3,R1) 0.006423362          NA
-    ## (4,R1)          NA 0.006423362
-    ## (1,R2) 0.156317460          NA
-    ## (2,R2)          NA 0.000000001
-    ## (3,R2)          NA 0.097033417
-    ## (4,R2) 0.288173003          NA
+    ##              (1,R1)       (2,R1)      (3,R1)      (4,R1)      (1,R2)
+    ## (1,R1)           NA 34.388972603 0.009559160          NA 0.024080467
+    ## (2,R1) 86.663780089           NA          NA 0.000000001          NA
+    ## (3,R1)  0.000000001           NA          NA 0.004433350          NA
+    ## (4,R1)           NA  0.000000001 0.005294327          NA          NA
+    ## (1,R2)  0.016134535           NA          NA          NA          NA
+    ## (2,R2)           NA  0.016134535          NA          NA 0.001123367
+    ## (3,R2)           NA           NA 0.016134535          NA 0.005130183
+    ## (4,R2)           NA           NA          NA 0.016134535          NA
+    ##             (2,R2)       (3,R2)       (4,R2)
+    ## (1,R1)          NA           NA           NA
+    ## (2,R1) 0.024080467           NA           NA
+    ## (3,R1)          NA 2.408047e-02           NA
+    ## (4,R1)          NA           NA  0.024080467
+    ## (1,R2) 0.000000001 1.000000e-09           NA
+    ## (2,R2)          NA           NA  0.007875297
+    ## (3,R2)          NA           NA 18.017677301
+    ## (4,R2) 0.002523890 1.000000e+02           NA
     ## 
     ## Arrived at a reliable solution
 
@@ -170,7 +185,7 @@ MK_sub_hidden
 plotMKmodel(MK_sub_hidden, display = "row")
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
 
 ## Visualization of transitions
 
@@ -228,4 +243,4 @@ phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.05
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](State_transitions_analysis_files/figure-gfm/plot-1.png)<!-- -->

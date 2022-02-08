@@ -9,12 +9,19 @@ editor_options:
 
 ## Overall setup
 
-### Global setup, load relevant packages 
+### Setup 
 
 ```{r setup, include=FALSE}
 
 # Global setup
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+
+```
+
+
+### Load the packages for analysis 
+
+```{r packages}
 
 # Packages 
 library(tidyverse)
@@ -34,7 +41,7 @@ library(inauguration)
 The datasheet contains information about the symbiotic status (Fixer column) of the legume species where 1 indicates a legume that forms nodules with rhizobia (aka a mutualist) and where 0 indicates a plant that forms no association with rhizobia (nonmutualist). The diPloidyLow column indicates whether plant species are diploids (coded as 0) or polyploid (coded as 1). The diPloidyLow values were calculated from genus-level data. The NewPloidy column also indicates diploidy (0) and polyploidy (1) but was calculated from a combination of genus and subfamily level data.  
 
 
-```{r}
+```{r data}
 # Dataset 
 ploidy<- read.csv("Legume_ploidy_dataset.csv", row.names=1)
 
@@ -57,7 +64,7 @@ ploidy1<-ploidy%>%
 We pruned the Zanne et al (2014) angiosperm phylogeny for legume species in our dataset.
 
 
-```{r}
+```{r prune}
 # Remove all NAs from the data for the relevant columns 
 ploidy_sub <- ploidy1 %>% 
   filter(!is.na(Fixer), !is.na(NewPloidy))
@@ -95,7 +102,7 @@ Traits:
 3 = mutualist diploid 
 4 = mutualist polyploid 
 
-```{r}
+```{r simple model}
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -121,7 +128,7 @@ States:
 R1 = rate category 1
 R2 = rate category 2 
 
-```{r}
+```{r hidden model}
 
 # Two traits and hidden states model 
 MK_sub_hidden<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=2)
@@ -138,7 +145,7 @@ plotMKmodel(MK_sub_hidden, display = "row")
 
 Pick 8 colours for plotting the different transitions on the tree and re-label to the corresponding states for ploidy and symbiosis. 
 
-```{r}
+```{r prep}
 
 # Load colour palettes 
 state_colours1<- inauguration("inauguration_2021")
@@ -163,7 +170,7 @@ legend_colours<-setNames(c("#cd3341", "#749dae", "#5445b1", "#372421", "#50506D"
 
 We plotted the transition rates determined from the hidden state model which was the best fitting model, for the largest dataset (genus + subfamily level ploidy). 
 
-```{r}
+```{r plot}
 
 # Extract the data from the model 
 phy_sub_hidden = MK_sub_hidden$phy
