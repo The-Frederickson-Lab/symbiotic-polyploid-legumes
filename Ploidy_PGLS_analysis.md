@@ -1,15 +1,34 @@
 PGLS analysis
 ================
 Tia Harrison
-2022-01-20
+2022-02-07
 
 ## Overall setup
 
-### Global setup, load relevant packages
+### Load the packages for analysis
 
-### Dataset
+``` r
+# Packages 
+library(tidyverse)
+library(car)
+library(lsmeans)
+library(lme4)
+library(MASS)
+library(ape)
+library(inauguration)
+library(ggpubr)
+library(plotrix)
+library(nlme)
+library(geiger)
+library(lmtest)
+library(sandwich)
+library(performance)
+library(phytools)
+```
 
-## Ploidy dataset and phylogeny
+## Dataset
+
+### Ploidy dataset and phylogeny
 
 The spreadsheet contains information about the symbiotic status (Fixer
 column) of each legume species where 1 indicates a legume that forms
@@ -112,8 +131,6 @@ ploidy_data1 %>%
   summarize(mean(Num_Introduced))
 ```
 
-    ## `summarise()` has grouped output by 'diPloidyLow'. You can override using the `.groups` argument.
-
     ## # A tibble: 4 × 3
     ## # Groups:   diPloidyLow [2]
     ##   diPloidyLow Fixer `mean(Num_Introduced)`
@@ -184,8 +201,6 @@ ploidy_data1 %>%
   summarize(mean(Human_Uses))
 ```
 
-    ## `summarise()` has grouped output by 'Specialist'. You can override using the `.groups` argument.
-
     ## # A tibble: 4 × 3
     ## # Groups:   Specialist [2]
     ##   Specialist NewPloidy `mean(Human_Uses)`
@@ -195,12 +210,30 @@ ploidy_data1 %>%
     ## 3 1          0                       2.94
     ## 4 1          1                       3.4
 
-## Comparison of genus level and genus+subfamily data
+``` r
+# Data summary for generalists
+ploidy_data1 %>%
+  filter(!is.na(NewPloidy) & !is.na(Num_Introduced) & !is.na(Specialist)) %>%
+  group_by(NewPloidy, Specialist) %>%
+  tally()
+```
+
+    ## # A tibble: 4 × 3
+    ## # Groups:   NewPloidy [2]
+    ##   NewPloidy Specialist     n
+    ##   <fct>     <fct>      <int>
+    ## 1 0         0             35
+    ## 2 0         1             66
+    ## 3 1         0              7
+    ## 4 1         1             25
+
+### Comparison of genus level and genus+subfamily data
 
 Here we looked at the species added in the genus+subfamily dataset in
 terms of fixer status and number of introduced ranges.
 
 ``` r
+# Prep data
 add_spp<- ploidy_data1 %>%
   filter(!is.na(NewPloidy) & is.na(diPloidyLow) & !is.na(Num_Introduced) & !is.na(Fixer))
 
@@ -223,8 +256,6 @@ add_spp %>%
   group_by(Fixer, NewPloidy) %>%
   summarize(mean(Num_Introduced))
 ```
-
-    ## `summarise()` has grouped output by 'Fixer'. You can override using the `.groups` argument.
 
     ## # A tibble: 4 × 3
     ## # Groups:   Fixer [2]
@@ -311,72 +342,33 @@ model: control=glsControl(opt=“optim”,optimMethod=“Nelder-Mead”)
 #### Symbiosis and ploidy models
 
 ``` r
-# Run phylosig on the whole dataset 
-# Values need to match tree species so prep the data and filter
-ploidy_data_whole <- ploidy_data1 %>%
-  column_to_rownames("Species")
-introductions_whole<-ploidy_data_whole$Num_Introduced
-names(introductions_whole)<- rownames(ploidy_data_whole)
-phylosig(pruned, introductions_whole, method="lambda", test=TRUE) #  0.194648 and significant 
-```
-
-    ## [1] "some data in x given as 'NA', dropping corresponding species from tree"
-
-    ## 
-    ## Phylogenetic signal lambda : 0.194648 
-    ## logL(lambda) : -3134.39 
-    ## LR(lambda=0) : 29.324 
-    ## P-value (based on LR test) : 6.12312e-08
-
-``` r
-# Estimate lambda and its significance to see if it is worth using pgls or a glm model instead 
-# Just estimate lambda in data for test 
-ploidy_data_match <- ploidy_data1 %>%
-  column_to_rownames("Species") %>%
-  filter(!is.na(NewPloidy) & !is.na(Fixer))
-introductions<-ploidy_data_match$Num_Introduced
-names(introductions)<- rownames(ploidy_data_match)
-
-# Run phylosig to estimate lambda 
-phylosig(pruned, introductions, method="lambda", test=TRUE) # 0.194005 and significant 
-```
-
-    ## [1] "some species in tree are missing from x , dropping missing taxa from the tree"
-
-    ## 
-    ## Phylogenetic signal lambda : 0.194005 
-    ## logL(lambda) : -3124.37 
-    ## LR(lambda=0) : 29.0811 
-    ## P-value (based on LR test) : 6.94092e-08
-
-``` r
-# Run pgls and allow lambda to vary in symbiotic status
+# Run pgls and allow lambda to vary 
 model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub2)
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-1.png)<!-- -->
 
 ``` r
 plot(fitted(model_sub2), sqrt(abs(resid(model_sub2))), main="Scale-location")
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-2.png)<!-- -->
 
 ``` r
 hist(resid(model_sub2))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-3.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_sub2))
 qqline(resid(model_sub2))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-4.png)<!-- -->
 
 ``` r
 # Test for significance 
@@ -424,7 +416,7 @@ summary(model_sub2)
     ## Degrees of freedom: 811 total; 803 residual
 
 ``` r
-Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3) # Type 3 for interaction and contrasts set 
+Anova(model_sub2, contrasts=list("contr.sum","contr.poly"), type=3) # Type 3 for interaction and set contrasts
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -443,225 +435,15 @@ Anova(model_sub2, contrasts=list(topic=contr.sum, sys=contr.sum), type=3) # Type
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-# Ploidy estimates have the expected sign, interaction is non-significant, but fixer estimate is opposite to what is expected 
+# Ploidy estimates have the expected sign, interaction is non-significant
 
 # Get means from the model 
 model_sub2_results<-lsmeans(model_sub2, pairwise~NewPloidy+Fixer, mode = "df.error")
-```
-
-    ## Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
-
-``` r
 model_sub2_results<-data.frame(model_sub2_results$lsmeans)
 
-#Lambda is very close to zero, so perhaps not strong phylogenetic clustering of trait
-#Therefore compare to a phylogenetically uncorrected model
+# Lambda is very close to zero, so perhaps not a strong phylogenetic clustering of trait
+# Therefore compare to an uncorrected model for phylogeny
 
-#Let's start with a Poisson model
-model_poisson <- glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="poisson")
-
-#Inspect model fit
-plot(model_poisson) #Fit isn't awesome
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-7.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-8.png)<!-- -->
-
-``` r
-check_overdispersion(model_poisson) # Overdispersion detected 
-```
-
-    ## # Overdispersion test
-    ## 
-    ##        dispersion ratio =    8.053
-    ##   Pearson's Chi-Squared = 6466.511
-    ##                 p-value =  < 0.001
-
-    ## Overdispersion detected.
-
-``` r
-summary(model_poisson) #Probably not correct because of over-dispersion
-```
-
-    ## 
-    ## Call:
-    ## glm(formula = Num_Introduced ~ NewPloidy * Fixer + AbsLatNative + 
-    ##     areaNativeScale + Human_Uses + annual, family = "poisson", 
-    ##     data = ploidy_data1)
-    ## 
-    ## Deviance Residuals: 
-    ##     Min       1Q   Median       3Q      Max  
-    ## -8.6313  -1.9626  -1.6237   0.3156  12.3931  
-    ## 
-    ## Coefficients:
-    ##                    Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)        0.414475   0.067086   6.178 6.48e-10 ***
-    ## NewPloidy1         0.572878   0.078284   7.318 2.52e-13 ***
-    ## Fixer1             0.247663   0.059211   4.183 2.88e-05 ***
-    ## AbsLatNative      -0.010951   0.001113  -9.838  < 2e-16 ***
-    ## areaNativeScale   -0.121148   0.011931 -10.154  < 2e-16 ***
-    ## Human_Uses         0.431696   0.005853  73.758  < 2e-16 ***
-    ## annual             0.405120   0.039949  10.141  < 2e-16 ***
-    ## NewPloidy1:Fixer1 -0.649369   0.086945  -7.469 8.10e-14 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## (Dispersion parameter for poisson family taken to be 1)
-    ## 
-    ##     Null deviance: 10821.6  on 810  degrees of freedom
-    ## Residual deviance:  5148.8  on 803  degrees of freedom
-    ##   (54 observations deleted due to missingness)
-    ## AIC: 6574.8
-    ## 
-    ## Number of Fisher Scoring iterations: 6
-
-``` r
-coeftest(model_poisson, vcov = sandwich) #Recompute Wald tests using sandwich standard errors, and it's likely more correct
-```
-
-    ## 
-    ## z test of coefficients:
-    ## 
-    ##                     Estimate Std. Error z value  Pr(>|z|)    
-    ## (Intercept)        0.4144754  0.2001804  2.0705  0.038405 *  
-    ## NewPloidy1         0.5728782  0.2104614  2.7220  0.006489 ** 
-    ## Fixer1             0.2476627  0.1777708  1.3932  0.163572    
-    ## AbsLatNative      -0.0109511  0.0036713 -2.9829  0.002855 ** 
-    ## areaNativeScale   -0.1211477  0.0403070 -3.0056  0.002650 ** 
-    ## Human_Uses         0.4316962  0.0176811 24.4157 < 2.2e-16 ***
-    ## annual             0.4051200  0.1366900  2.9638  0.003039 ** 
-    ## NewPloidy1:Fixer1 -0.6493688  0.2430981 -2.6712  0.007558 ** 
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-Anova(model_poisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
-```
-
-    ## Analysis of Deviance Table (Type III tests)
-    ## 
-    ## Response: Num_Introduced
-    ##                 LR Chisq Df Pr(>Chisq)    
-    ## NewPloidy           52.6  1  4.111e-13 ***
-    ## Fixer               18.5  1  1.693e-05 ***
-    ## AbsLatNative        97.9  1  < 2.2e-16 ***
-    ## areaNativeScale    110.6  1  < 2.2e-16 ***
-    ## Human_Uses        4798.1  1  < 2.2e-16 ***
-    ## annual              96.2  1  < 2.2e-16 ***
-    ## NewPloidy:Fixer     55.2  1  1.072e-13 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-# Try including random term for species to help with overdispersion problem 
-ploidy_data2 <- ploidy_data1 %>%
-  mutate(Species = as.factor(Species))
-
-model_poisson_rand <- glmer(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual + (1|Species), data=ploidy_data2, family="poisson")
-```
-
-    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
-    ## Model failed to converge with max|grad| = 0.468328 (tol = 0.002, component 1)
-
-``` r
-#Inspect model fit
-plot(model_poisson_rand) 
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-9.png)<!-- -->
-
-``` r
-plot(fitted(model_poisson_rand), sqrt(abs(resid(model_poisson_rand))), main="Scale-location")
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-10.png)<!-- -->
-
-``` r
-qqnorm(resid(model_poisson_rand))
-qqline(resid(model_poisson_rand)) # Fit got worse
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-11.png)<!-- -->
-
-``` r
-check_overdispersion(model_poisson_rand)  
-```
-
-    ## # Overdispersion test
-    ## 
-    ##        dispersion ratio =   0.167
-    ##   Pearson's Chi-Squared = 134.062
-    ##                 p-value =       1
-
-    ## No overdispersion detected.
-
-``` r
-summary(model_poisson_rand) #Probably not correct because of over-dispersion
-```
-
-    ## Generalized linear mixed model fit by maximum likelihood (Laplace
-    ##   Approximation) [glmerMod]
-    ##  Family: poisson  ( log )
-    ## Formula: Num_Introduced ~ NewPloidy * Fixer + AbsLatNative + areaNativeScale +  
-    ##     Human_Uses + annual + (1 | Species)
-    ##    Data: ploidy_data2
-    ## 
-    ##      AIC      BIC   logLik deviance df.resid 
-    ##   3329.0   3371.3  -1655.5   3311.0      802 
-    ## 
-    ## Scaled residuals: 
-    ##     Min      1Q  Median      3Q     Max 
-    ## -0.9963 -0.4327 -0.3731  0.1972  0.7396 
-    ## 
-    ## Random effects:
-    ##  Groups  Name        Variance Std.Dev.
-    ##  Species (Intercept) 2.433    1.56    
-    ## Number of obs: 811, groups:  Species, 811
-    ## 
-    ## Fixed effects:
-    ##                    Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)       -1.400509   0.332790  -4.208 2.57e-05 ***
-    ## NewPloidy1         0.673463   0.451807   1.491  0.13607    
-    ## Fixer1             0.060294   0.301564   0.200  0.84153    
-    ## AbsLatNative      -0.008679   0.005093  -1.704  0.08838 .  
-    ## areaNativeScale   -0.123507   0.060824  -2.031  0.04230 *  
-    ## Human_Uses         0.745863   0.037033  20.140  < 2e-16 ***
-    ## annual             0.503226   0.177656   2.833  0.00462 ** 
-    ## NewPloidy1:Fixer1 -0.539049   0.480936  -1.121  0.26236    
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Correlation of Fixed Effects:
-    ##             (Intr) NwPld1 Fixer1 AbsLtN arNtvS Hmn_Us annual
-    ## NewPloidy1  -0.556                                          
-    ## Fixer1      -0.820  0.578                                   
-    ## AbsLatNativ -0.319  0.078 -0.069                            
-    ## areaNatvScl  0.040  0.008 -0.055  0.111                     
-    ## Human_Uses  -0.428 -0.001  0.121  0.069 -0.312              
-    ## annual       0.004 -0.009 -0.077 -0.173 -0.022  0.092       
-    ## NwPldy1:Fx1  0.527 -0.943 -0.587 -0.115 -0.029  0.023 -0.030
-    ## optimizer (Nelder_Mead) convergence code: 0 (OK)
-    ## Model failed to converge with max|grad| = 0.468328 (tol = 0.002, component 1)
-
-``` r
-Anova(model_poisson_rand, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
-```
-
-    ## Analysis of Deviance Table (Type III Wald chisquare tests)
-    ## 
-    ## Response: Num_Introduced
-    ##                    Chisq Df Pr(>Chisq)    
-    ## (Intercept)      17.7105  1  2.572e-05 ***
-    ## NewPloidy         2.2219  1   0.136067    
-    ## Fixer             0.0400  1   0.841529    
-    ## AbsLatNative      2.9037  1   0.088378 .  
-    ## areaNativeScale   4.1232  1   0.042298 *  
-    ## Human_Uses      405.6345  1  < 2.2e-16 ***
-    ## annual            8.0236  1   0.004617 ** 
-    ## NewPloidy:Fixer   1.2563  1   0.262359    
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
 #Quasipoisson model for number of introductions is probably preferable given over-dispersion
 model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
 
@@ -669,7 +451,7 @@ model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativ
 plot(model_qpoisson) #Fit isn't awesome but maybe the best so far 
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-12.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-13.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-14.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-7-15.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-7.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/symbiosis%20models-8.png)<!-- -->
 
 ``` r
 # Check summary output 
@@ -728,7 +510,7 @@ coeftest(model_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
+Anova(model_qpoisson, contrasts=list("contr.sum","contr.poly"), type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -748,53 +530,27 @@ Anova(model_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
 #### Specificity and ploidy models
 
 ``` r
-# Estimate lambda and its significance to see if it is worth using pgls or a glm model instead 
-# Values need to match tree species so prep the data and filter
-ploidy_data_match2 <- ploidy_data1 %>%
-  column_to_rownames("Species") %>%
-  filter(!is.na(NewPloidy) & !is.na(Specialist))
-introductions2<-ploidy_data_match2$Num_Introduced
-names(introductions2)<- rownames(ploidy_data_match2)
-
-# Run phylosig to estimate lambda 
-phylosig(pruned, introductions2, method="lambda", test=TRUE) # 0.346448 and significant 
-```
-
-    ## [1] "some species in tree are missing from x , dropping missing taxa from the tree"
-
-    ## 
-    ## Phylogenetic signal lambda : 0.346448 
-    ## logL(lambda) : -560.986 
-    ## LR(lambda=0) : 6.22852 
-    ## P-value (based on LR test) : 0.0125709
-
-``` r
 # Run pgls for specificity on rhizobia 
 model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
-```
 
-    ## Warning in optim(c(coef(glsSt)), function(glsPars) -logLik(glsSt, glsPars), : one-dimensional optimization by Nelder-Mead is unreliable:
-    ## use "Brent" or optimize() directly
-
-``` r
 # Inspect model fit 
 plot(model_sub_spec2)
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-1.png)<!-- -->
 
 ``` r
 plot(fitted(model_sub_spec2), sqrt(abs(resid(model_sub_spec2))), main="Scale-location")
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-2.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_sub_spec2))
 qqline(resid(model_sub_spec2))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-3.png)<!-- -->
 
 ``` r
 # Test for significance 
@@ -842,7 +598,7 @@ summary(model_sub_spec2)
     ## Degrees of freedom: 130 total; 122 residual
 
 ``` r
-Anova(model_sub_spec2, contrasts=list(topic=contr.sum), type=3)
+Anova(model_sub_spec2, , contrasts=list("contr.sum","contr.poly"), type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -865,124 +621,19 @@ Anova(model_sub_spec2, contrasts=list(topic=contr.sum), type=3)
 
 # Grab the model means 
 model_sub_spec2_results<-lsmeans(model_sub_spec2, pairwise~NewPloidy+Specialist, mode = "df.error")
-```
-
-    ## Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
-
-``` r
 model_sub_spec2_results<-data.frame(model_sub_spec2_results$lsmeans)
 
 # Lambda estimated in the model is negative so likely overdispersed 
-# Phylogenetically uncorrected model is probably better and more appropriate 
+# Uncorrected model for phylogeny is probably better and more appropriate 
 
-#Fit Poisson model for specificity 
-model_spec_poisson <- glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="poisson")
-
-#Inspect model fit
-plot(model_spec_poisson) #Fit isn't terrible
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-7.png)<!-- -->
-
-``` r
-check_overdispersion(model_spec_poisson)
-```
-
-    ## # Overdispersion test
-    ## 
-    ##        dispersion ratio =   10.059
-    ##   Pearson's Chi-Squared = 1227.175
-    ##                 p-value =  < 0.001
-
-    ## Overdispersion detected.
-
-``` r
-summary(model_spec_poisson) 
-```
-
-    ## 
-    ## Call:
-    ## glm(formula = Num_Introduced ~ NewPloidy * Specialist + AbsLatNative + 
-    ##     areaNativeScale + Human_Uses + annual, family = "poisson", 
-    ##     data = ploidy_data1)
-    ## 
-    ## Deviance Residuals: 
-    ##     Min       1Q   Median       3Q      Max  
-    ## -8.7162  -2.8554  -0.8980   0.8747   9.9823  
-    ## 
-    ## Coefficients:
-    ##                         Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)             1.945549   0.078400  24.816  < 2e-16 ***
-    ## NewPloidy1              0.498004   0.085805   5.804 6.48e-09 ***
-    ## Specialist1             0.115956   0.056597   2.049   0.0405 *  
-    ## AbsLatNative           -0.020266   0.001624 -12.480  < 2e-16 ***
-    ## areaNativeScale        -0.220055   0.015883 -13.854  < 2e-16 ***
-    ## Human_Uses              0.290491   0.009940  29.224  < 2e-16 ***
-    ## annual                  0.238563   0.055540   4.295 1.74e-05 ***
-    ## NewPloidy1:Specialist1 -0.930729   0.112206  -8.295  < 2e-16 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## (Dispersion parameter for poisson family taken to be 1)
-    ## 
-    ##     Null deviance: 2517  on 129  degrees of freedom
-    ## Residual deviance: 1193  on 122  degrees of freedom
-    ##   (735 observations deleted due to missingness)
-    ## AIC: 1627.7
-    ## 
-    ## Number of Fisher Scoring iterations: 5
-
-``` r
-coeftest(model_spec_poisson, vcov = sandwich) #Recompute Wald tests using sandwich standard errors, and it's likely more correct
-```
-
-    ## 
-    ## z test of coefficients:
-    ## 
-    ##                          Estimate Std. Error z value  Pr(>|z|)    
-    ## (Intercept)             1.9455492  0.2312515  8.4131 < 2.2e-16 ***
-    ## NewPloidy1              0.4980043  0.2516343  1.9791  0.047807 *  
-    ## Specialist1             0.1159561  0.1777887  0.6522  0.514264    
-    ## AbsLatNative           -0.0202660  0.0045768 -4.4280 9.511e-06 ***
-    ## areaNativeScale        -0.2200550  0.0435145 -5.0570 4.258e-07 ***
-    ## Human_Uses              0.2904914  0.0296879  9.7849 < 2.2e-16 ***
-    ## annual                  0.2385632  0.1656679  1.4400  0.149865    
-    ## NewPloidy1:Specialist1 -0.9307286  0.3123907 -2.9794  0.002888 ** 
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-# Try including random term for species to help with overdispersion problem 
-model_spec_poisson_rand <- glmer(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual + (1|Species), data=ploidy_data2, family="poisson")
-
-# Inspect model fit
-plot(model_spec_poisson_rand) 
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-8.png)<!-- -->
-
-``` r
-plot(fitted(model_spec_poisson_rand), sqrt(abs(resid(model_spec_poisson_rand))), main="Scale-location")
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-9.png)<!-- -->
-
-``` r
-qqnorm(resid(model_spec_poisson_rand))
-qqline(resid(model_spec_poisson_rand)) # Fit is bad
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-10.png)<!-- -->
-
-``` r
-#Quasipoisson model for number of introductions is probably preferable given over-dispersion
+# Quasipoisson model for number of introductions is probably preferable given over-dispersion
 model_spec_qpoisson <-glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
 
-#Inspect model fit
+# Inspect model fit
 plot(model_spec_qpoisson) # Pretty good
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-11.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-12.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-13.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-8-14.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-4.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/specificity%20models-7.png)<!-- -->
 
 ``` r
 # Summary output 
@@ -1041,7 +692,7 @@ coeftest(model_spec_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_spec_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=3)
+Anova(model_spec_qpoisson, contrasts=list("contr.sum","contr.poly"), type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -1077,14 +728,14 @@ model_sub_non<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNa
 plot(model_sub_non)
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-1.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_sub_non))
 qqline(resid(model_sub_non)) # This looks pretty ok with the raw data but maybe a bit better with the logged values 
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-2.png)<!-- -->
 
 ``` r
 # Test for significance 
@@ -1128,7 +779,7 @@ summary(model_sub_non)
     ## Degrees of freedom: 66 total; 60 residual
 
 ``` r
-Anova(model_sub_non, type=2,  contrasts=list(topic=contr.sum)) # Type 2 anova 
+Anova(model_sub_non, contrasts=list("contr.sum","contr.poly"), type=2) # Type 2 anova 
 ```
 
     ## Analysis of Deviance Table (Type II tests)
@@ -1157,14 +808,14 @@ model_sub_sym<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNa
 plot(model_sub_sym)
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-3.png)<!-- -->
 
 ``` r
 qqnorm(resid(model_sub_sym))
 qqline(resid(model_sub_sym))
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-4.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-4.png)<!-- -->
 
 ``` r
 # Test for significance 
@@ -1208,7 +859,7 @@ summary(model_sub_sym)
     ## Degrees of freedom: 745 total; 739 residual
 
 ``` r
-Anova(model_sub_sym, type=2,  contrasts=list(topic=contr.sum))
+Anova(model_sub_sym, contrasts=list("contr.sum","contr.poly"), type=2)
 ```
 
     ## Analysis of Deviance Table (Type II tests)
@@ -1226,70 +877,8 @@ Anova(model_sub_sym, type=2,  contrasts=list(topic=contr.sum))
 ``` r
 # No significant effect of ploidy here 
 
-# Lambda very close to zero so could go for a uncorrected model 
+# Lambda very close to zero so could try a uncorrected model 
 
-# Poisson 
-model_sub_sym_poisson<-glm(Num_Introduced ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, family="poisson")
-
-# Check fit 
-plot(model_sub_sym_poisson) # Not great 
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-7.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-8.png)<!-- -->
-
-``` r
-check_overdispersion(model_sub_sym_poisson) # some overdispersion 
-```
-
-    ## # Overdispersion test
-    ## 
-    ##        dispersion ratio =    8.141
-    ##   Pearson's Chi-Squared = 6016.043
-    ##                 p-value =  < 0.001
-
-    ## Overdispersion detected.
-
-``` r
-# Include random term to help with overdispersion
-model_sub_sym_rand<-glmer(Num_Introduced ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual + (1|Species), data=ploidy_data_sym, family="poisson")
-```
-
-    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
-    ## Model failed to converge with max|grad| = 0.00261542 (tol = 0.002, component 1)
-
-``` r
-# Check fit 
-plot(model_sub_sym_rand) 
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-9.png)<!-- -->
-
-``` r
-plot(fitted(model_sub_sym_rand), sqrt(abs(resid(model_sub_sym_rand))), main="Scale-location")
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-10.png)<!-- -->
-
-``` r
-qqnorm(resid(model_sub_sym_rand))
-qqline(resid(model_sub_sym_rand)) # Worse fit 
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-11.png)<!-- -->
-
-``` r
-check_overdispersion(model_sub_sym_rand) # No overdispersion 
-```
-
-    ## # Overdispersion test
-    ## 
-    ##        dispersion ratio =   0.161
-    ##   Pearson's Chi-Squared = 119.172
-    ##                 p-value =       1
-
-    ## No overdispersion detected.
-
-``` r
 # Quassipoisson 
 model_sub_sym_qpoisson<-glm(Num_Introduced ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, family="quasipoisson")
 
@@ -1297,7 +886,7 @@ model_sub_sym_qpoisson<-glm(Num_Introduced ~ NewPloidy + AbsLatNative + areaNati
 plot(model_sub_sym_qpoisson) # Not the greatest fit but maybe best of the bunch 
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-12.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-13.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-14.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-9-15.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-5.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-6.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-7.png)<!-- -->![](Ploidy_PGLS_analysis_files/figure-gfm/data%20split-8.png)<!-- -->
 
 ``` r
 # Summary output 
@@ -1351,7 +940,7 @@ coeftest(model_sub_sym_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_sub_sym_qpoisson, contrasts=list(topic=contr.sum, sys=contr.sum), type=2)
+Anova(model_sub_sym_qpoisson, contrasts=list("contr.sum","contr.poly"), type=2)
 ```
 
     ## Analysis of Deviance Table (Type II tests)
@@ -1383,11 +972,7 @@ ploidy_sub_sum<- ploidy_data1 %>%
   filter(!is.na(Fixer) & !is.na(NewPloidy)) %>%
   dplyr::group_by(NewPloidy, Fixer) %>%
   dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
-```
 
-    ## `summarise()` has grouped output by 'NewPloidy'. You can override using the `.groups` argument.
-
-``` r
 # Get colours 
 ploidy_colours<-inauguration("inauguration_2021")
 
@@ -1414,11 +999,7 @@ ploidy_sub_spec<- ploidy_data1 %>%
   filter(!is.na(Specialist) & !is.na(NewPloidy)) %>%
   dplyr::group_by(NewPloidy, Specialist) %>%
   dplyr::summarise(mean=mean(Num_Introduced), se=std.error(Num_Introduced))
-```
 
-    ## `summarise()` has grouped output by 'NewPloidy'. You can override using the `.groups` argument.
-
-``` r
 # Reaction norm for specificity 
 sub_spec<-ggplot(ploidy_sub_spec, aes(x=Specialist, y=mean, fill=NewPloidy)) + 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.1, position=position_dodge(0.2)) +
@@ -1446,147 +1027,4 @@ Figure_raw <- ggarrange(sub_interaction, sub_spec,
 Figure_raw
 ```
 
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
-
-### PGLS interaction of ploidy and symbiosis
-
-The means and standard deviation plotted here are output from the pgls
-models in our analyses.
-
-``` r
-# Prep the output from the model  
-model_sub2_results <- model_sub2_results %>%
-  mutate(NewPloidy=as.factor(NewPloidy)) %>%
-  mutate(Fixer=as.factor(Fixer))
-model_sub2_results
-```
-
-    ##   NewPloidy Fixer    lsmean         SE  df  lower.CL  upper.CL
-    ## 1         0     0 0.4036514 0.06818363 801 0.2698117 0.5374911
-    ## 2         1     0 0.5274186 0.08745240 801 0.3557556 0.6990815
-    ## 3         0     1 0.3981250 0.03998128 801 0.3196446 0.4766055
-    ## 4         1     1 0.4189485 0.04552759 801 0.3295811 0.5083160
-
-``` r
-# Plot the means 
-sub_interaction2<-ggplot(model_sub2_results, aes(x=Fixer, y=lsmean, fill=NewPloidy)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (log)")) +
-  (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Prep the output from the model  
-model_sub_spec2_results <- model_sub_spec2_results %>%
-  mutate(NewPloidy=as.factor(NewPloidy)) %>%
-  mutate(Specialist=as.factor(Specialist))
-
-# Plot the model means 
-sub_spec2<-ggplot(model_sub_spec2_results, aes(x=Specialist, y=lsmean, fill=NewPloidy)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("Introduced ranges (log)")) +
-  (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Combine the plots 
-Figure_pgls <- ggarrange(sub_interaction2, sub_spec2,
-                    labels=c("a", "b"), 
-                    ncol = 2, nrow=1,
-                    common.legend=TRUE, 
-                    legend = "top")
-Figure_pgls
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-
-### Quasi-poisson interaction of ploidy and symbiosis
-
-Results from the glm models where data was fit to a quasi-poisson
-distribution
-
-``` r
-# Prep the output from the model  
-# Get means from the model 
-model_q_results<-lsmeans(model_qpoisson, pairwise~NewPloidy+Fixer, mode = "df.error")
-model_q_results<-data.frame(model_q_results$lsmeans)
-
-model_q_results2 <- model_q_results %>%
-  mutate(NewPloidy=as.factor(NewPloidy)) %>%
-  mutate(Fixer=as.factor(Fixer))
-
-
-# Plot the means 
-q_interaction<-ggplot(model_q_results2, aes(x=Fixer, y=lsmean, fill=NewPloidy)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("GLM means (introduced ranges)")) +
-  (xlab("Symbiotic state")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Prep the output from the model  
-model_q_spec_results<-lsmeans(model_spec_qpoisson, pairwise~NewPloidy+Specialist, mode = "df.error")
-model_q_spec_results<-data.frame(model_q_spec_results$lsmeans)
-
-model_q_spec_results2 <- model_q_spec_results %>%
-  mutate(NewPloidy=as.factor(NewPloidy)) %>%
-  mutate(Specialist=as.factor(Specialist))
-
-# Plot the model means 
-q_spec_interaction<-ggplot(model_q_spec_results2, aes(x=Specialist, y=lsmean, fill=NewPloidy)) + 
-  geom_errorbar(aes(ymin=lsmean-SE, ymax=lsmean+SE), width=0.1, position=position_dodge(0.2)) +
-  geom_line(aes(group=NewPloidy), position=position_dodge(0.2)) +
-  geom_point(pch =21, size=4, position=position_dodge(0.2)) + 
-  (ylab("GLM means (introduced ranges)")) +
-  (xlab("Specificity on rhizobia")) +
-  scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
-  scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
-  theme_classic() +
-  theme(axis.title.x = element_text(size=13), 
-        axis.title.y = element_text(size=13), 
-        axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
-        legend.title= element_text(size=12), 
-        legend.text=element_text(size=12), 
-        legend.position="top")
-
-# Combine the plots 
-Figure_qpoisson <- ggarrange(q_interaction, q_spec_interaction,
-                    labels=c("a", "b"), 
-                    ncol = 2, nrow=1,
-                    common.legend=TRUE, 
-                    legend = "top")
-Figure_qpoisson
-```
-
-![](Ploidy_PGLS_analysis_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](Ploidy_PGLS_analysis_files/figure-gfm/plot-1.png)<!-- -->
