@@ -1,7 +1,7 @@
 PGLS analysis
 ================
 Tia Harrison
-2022-02-07
+2022-02-14
 
 ## Overall setup
 
@@ -416,7 +416,7 @@ summary(model_sub2)
     ## Degrees of freedom: 811 total; 803 residual
 
 ``` r
-Anova(model_sub2, contrasts=list("contr.sum","contr.poly"), type=3) # Type 3 for interaction and set contrasts
+Anova(model_sub2, type=3) # Type 3 for interaction
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -435,8 +435,6 @@ Anova(model_sub2, contrasts=list("contr.sum","contr.poly"), type=3) # Type 3 for
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-# Ploidy estimates have the expected sign, interaction is non-significant
-
 # Get means from the model 
 model_sub2_results<-lsmeans(model_sub2, pairwise~NewPloidy+Fixer, mode = "df.error")
 model_sub2_results<-data.frame(model_sub2_results$lsmeans)
@@ -510,7 +508,7 @@ coeftest(model_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_qpoisson, contrasts=list("contr.sum","contr.poly"), type=3)
+Anova(model_qpoisson, type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -598,7 +596,7 @@ summary(model_sub_spec2)
     ## Degrees of freedom: 130 total; 122 residual
 
 ``` r
-Anova(model_sub_spec2, , contrasts=list("contr.sum","contr.poly"), type=3)
+Anova(model_sub_spec2, type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -617,8 +615,6 @@ Anova(model_sub_spec2, , contrasts=list("contr.sum","contr.poly"), type=3)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-# Ploidy estimate sign is correct, specialist estimate is opposite sign as to what expected, interaction is significant 
-
 # Grab the model means 
 model_sub_spec2_results<-lsmeans(model_sub_spec2, pairwise~NewPloidy+Specialist, mode = "df.error")
 model_sub_spec2_results<-data.frame(model_sub_spec2_results$lsmeans)
@@ -692,7 +688,7 @@ coeftest(model_spec_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_spec_qpoisson, contrasts=list("contr.sum","contr.poly"), type=3)
+Anova(model_spec_qpoisson, type=3)
 ```
 
     ## Analysis of Deviance Table (Type III tests)
@@ -779,7 +775,7 @@ summary(model_sub_non)
     ## Degrees of freedom: 66 total; 60 residual
 
 ``` r
-Anova(model_sub_non, contrasts=list("contr.sum","contr.poly"), type=2) # Type 2 anova 
+Anova(model_sub_non, type=2) # Type 2 anova 
 ```
 
     ## Analysis of Deviance Table (Type II tests)
@@ -859,7 +855,7 @@ summary(model_sub_sym)
     ## Degrees of freedom: 745 total; 739 residual
 
 ``` r
-Anova(model_sub_sym, contrasts=list("contr.sum","contr.poly"), type=2)
+Anova(model_sub_sym, type=2)
 ```
 
     ## Analysis of Deviance Table (Type II tests)
@@ -940,7 +936,7 @@ coeftest(model_sub_sym_qpoisson, vcov = sandwich)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-Anova(model_sub_sym_qpoisson, contrasts=list("contr.sum","contr.poly"), type=2)
+Anova(model_sub_sym_qpoisson, type=2)
 ```
 
     ## Analysis of Deviance Table (Type II tests)
