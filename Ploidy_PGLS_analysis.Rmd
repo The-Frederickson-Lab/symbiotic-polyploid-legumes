@@ -35,6 +35,7 @@ library(lmtest)
 library(sandwich)
 library(performance)
 library(phytools)
+library(MuMIn)
 
 ```
 
@@ -75,6 +76,7 @@ ploidy1<-ploidy%>%
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
   column_to_rownames()
+ ploidy1
 
 ```
 
@@ -107,6 +109,7 @@ ploidy_data1 <- ploidy_data %>%
          Specialist=as.factor(Specialist), 
          diPloidyLow=as.factor(diPloidyLow), 
          NewPloidy=as.factor(NewPloidy))
+
 ```
 
 ### Data exploration 
@@ -157,6 +160,22 @@ ploidy_data1 %>%
   group_by(NewPloidy, Specialist) %>%
   tally()
 
+# How many unique genera
+ploidy_data1 %>%
+  group_by(Genus) %>%
+  tally()
+
+# Find all polyploid generalists 
+ploidy_data1 %>%
+  filter(NewPloidy==1, Specialist==0)
+
+# Unique subfamilies 
+ploidy_data1 %>%
+  group_by(subfamily) %>%
+  tally()
+
+ploidy_data1 %>%
+  filter(subfamily=="Mimosoid")
 ```
 
 ### Comparison of genus level and genus+subfamily data 
@@ -206,6 +225,30 @@ cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="spearman", exact
 cor.test(ploidy_data1$PloidyLow, ploidy_data1$sfPloidy, method="kendall")
 
 ```
+### Model selection on covariates 
+
+There are many covariates in this model. We performed model selection to check which ones should be included in the model.This step was done without the phylogenetic correction. 
+
+```{r model selection}
+
+# Filter missing data for model selection 
+ploidy_data_comp<- ploidy_data1 %>%
+  filter(!is.na(Num_Introduced) & !is.na(NewPloidy) & !is.na(Fixer) & !is.na(AbsLatNative))
+
+# Run saturated model 
+# Log transformed number of introduced ranges for better fit to the model 
+model_sat <-lm(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data_comp, na.action="na.fail")
+
+# Check the model assumptions 
+plot(model_sat)
+
+# Run model selection 
+model_sel <- dredge(model_sat, rank=AIC)
+model_sel # Inspect output 
+
+# AIC values were all very close in values (under 2 units)
+# Therefore we will include all the covariates in the model, since we have biological reasons behind why we think they would impact introduction 
+```
 
 
 ### PGLS on the genus + subfamily level ploidy data  
@@ -215,12 +258,14 @@ In the PGLS model if you are having trouble getting the model to converge try se
 If changing lambda doesn't work try this code to get convergence in the model: 
 control=glsControl(opt="optim",optimMethod="Nelder-Mead") 
 
+This analysis is done with number of introduced ranges as the response variable which is testing how many times a species had a successful introduction event where it established in the new habitat. 
+
 #### Symbiosis and ploidy models 
 
 ```{r symbiosis models}
 
 # Run pgls and allow lambda to vary 
-model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Fixer + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
 
 # Inspect model fit 
 plot(model_sub2)
@@ -228,6 +273,7 @@ plot(fitted(model_sub2), sqrt(abs(resid(model_sub2))), main="Scale-location")
 hist(resid(model_sub2))
 qqnorm(resid(model_sub2))
 qqline(resid(model_sub2))
+# Fit is not great 
 
 # Test for significance 
 summary(model_sub2)
@@ -237,11 +283,11 @@ Anova(model_sub2, type=3) # Type 3 for interaction
 model_sub2_results<-lsmeans(model_sub2, pairwise~NewPloidy+Fixer, mode = "df.error")
 model_sub2_results<-data.frame(model_sub2_results$lsmeans)
 
-# Lambda is very close to zero, so perhaps not a strong phylogenetic clustering of trait
+# Lambda is close to zero, so perhaps not a strong phylogenetic clustering of trait
 # Therefore compare to an uncorrected model for phylogeny
 
-#Quasipoisson model for number of introductions is probably preferable given over-dispersion
-model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
+# Quasipoisson model for number of introductions is probably preferable given over-dispersion
+model_qpoisson <-glm(Num_Introduced ~ NewPloidy*Fixer + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
 
 #Inspect model fit
 plot(model_qpoisson) #Fit isn't awesome but maybe the best so far 
@@ -252,6 +298,70 @@ coeftest(model_qpoisson, vcov = sandwich)
 Anova(model_qpoisson, type=3)
 
 ```
+#### Ploidy level 
+
+Here we test whether there is a relationship between the ploidy level and the number of introduced ranges. If having more genetic material is useful for invasion, then the higher the ploidy level, the more a plant should be able to successfully invade new ranges.
+
+```{r ploidy level}
+
+# How many data points of each ploidy level?  
+ploidy_data1 %>%
+  group_by(Fixer, PloidyLow) %>%
+  tally()
+# Non-symbiotic species - most data is ploidy levels 1-4, with one data point with 7
+# Symbiotic species - data from levels 1-4 with decent number of data points, highest ploidy level 9
+
+# Are there haploids? 
+ploidy_data1 %>%
+  filter(PloidyLow==1)
+# Double check these species for diploid classification 
+# Not much information on these species, but some sources suggest that they are haploid
+# Check the source https://www-jstor-org.myaccess.library.utoronto.ca/stable/pdf/2439441.pdf?refreqid=excelsior%3A233a094cd168f60e7a362db898eaf172&ab_segments=&origin=&acceptTC=1 
+
+# Run pgls and allow lambda to vary 
+model_lev<-gls(log10(Num_Introduced+1) ~ PloidyLow*Fixer + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
+
+# Inspect model fit 
+plot(model_lev)
+plot(fitted(model_lev), sqrt(abs(resid(model_lev))), main="Scale-location")
+hist(resid(model_lev))
+qqnorm(resid(model_lev))
+qqline(resid(model_lev))
+# Fit is ok
+
+# Test for significance 
+model_lev
+summary(model_lev)
+Anova(model_lev, type=3) # Type 3 for interaction
+# p value is 0.1
+
+# Uncorrected model for phylogeny since lambda was low 
+model_lev_q<-glm(Num_Introduced ~ PloidyLow*Fixer + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
+
+# Inspect model fit 
+plot(model_lev_q)
+# Fit worse than pgls 
+
+# Test for significance 
+summary(model_lev_q)
+Anova(model_lev_q, type=3) 
+# Non-significant but also worse fit of the data 
+
+# Overall maybe some evidence in ploidy levels 1-4 that higher ploidy means more introduced ranges in non-symbiotic but not in symbiotic species 
+
+# Plot the relationship 
+level_plot <- ggplot(ploidy_data1, aes(x=PloidyLow, y=Num_Introduced, color=Fixer)) + 
+  geom_point(alpha=0.7, position="jitter") +
+  geom_smooth(method=lm) +
+  scale_x_discrete(limit=c("1","2", "3", "4", "5", "6", "7", "8", "9")) +
+  labs(y="Introduced ranges (no.)", x= "Ploidy level") +
+  scale_color_manual(labels=c("0"="non-symbiotic", "1"="symbiotic"), values=c("grey", "black")) +
+  theme_classic() +
+  theme(legend.title=element_blank())
+# Look at the plot 
+level_plot
+
+```
 
 
 #### Specificity and ploidy models 
@@ -259,7 +369,7 @@ Anova(model_qpoisson, type=3)
 ```{r specificity models}
 
 # Run pgls for specificity on rhizobia 
-model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
+model_sub_spec2<-gls(log10(Num_Introduced+1) ~ NewPloidy*Specialist + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
 
 # Inspect model fit 
 plot(model_sub_spec2)
@@ -279,7 +389,7 @@ model_sub_spec2_results<-data.frame(model_sub_spec2_results$lsmeans)
 # Uncorrected model for phylogeny is probably better and more appropriate 
 
 # Quasipoisson model for number of introductions is probably preferable given over-dispersion
-model_spec_qpoisson <-glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
+model_spec_qpoisson <-glm(Num_Introduced ~ NewPloidy*Specialist + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data1, family="quasipoisson")
 
 # Inspect model fit
 plot(model_spec_qpoisson) # Pretty good
@@ -302,7 +412,7 @@ ploidy_data_non <- ploidy_data1 %>%
 # Reduces the dataset to 68 species and two categories (diploid and polyploid)
 
 # Run pgls and allow lambda to vary
-model_sub_non<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_non, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub_non<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data_non, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude, control=glsControl(opt="optim",optimMethod="Nelder-Mead"))
 
 # Inspect model fit 
 plot(model_sub_non)
@@ -319,7 +429,7 @@ ploidy_data_sym <- ploidy_data1 %>%
   filter(Fixer == 1)
 
 # Run pgls and allow lambda to vary 
-model_sub_sym<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
+model_sub_sym<-gls(log10(Num_Introduced + 1) ~ NewPloidy + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data_sym, correlation=corPagel(value=0, phy=pruned, fixed=FALSE, form=~"Species"), method = "ML", na.action=na.exclude)
 
 # Inspect model fit 
 plot(model_sub_sym)
@@ -334,7 +444,7 @@ Anova(model_sub_sym, type=2)
 # Lambda very close to zero so could try a uncorrected model 
 
 # Quassipoisson 
-model_sub_sym_qpoisson<-glm(Num_Introduced ~ NewPloidy + AbsLatNative + areaNativeScale + Human_Uses + annual, data=ploidy_data_sym, family="quasipoisson")
+model_sub_sym_qpoisson<-glm(Num_Introduced ~ NewPloidy + AbsLatNative + scale(areaNative) + Human_Uses + annual, data=ploidy_data_sym, family="quasipoisson")
 
 # Check fit 
 plot(model_sub_sym_qpoisson) # Not the greatest fit but maybe best of the bunch 
@@ -355,7 +465,16 @@ Anova(model_sub_sym_qpoisson, type=2)
 
 Here we plot the means and standard error calculated from the raw data in the expanded dataset (more data points in each category). 
 
-```{r plot}
+```{r plot, dpi=300}
+
+# Get sample sizes 
+ploidy_data %>%
+  dplyr::group_by(NewPloidy, Fixer) %>%
+  tally()
+
+ploidy_data %>%
+  dplyr::group_by(NewPloidy, Specialist) %>%
+  tally()
 
 # Prep the data for plotting 
 ploidy_sub_sum<- ploidy_data1 %>%
@@ -375,15 +494,20 @@ sub_interaction<-ggplot(ploidy_sub_sum, aes(x=Fixer, y=mean, fill=NewPloidy)) +
   (xlab("Symbiotic state")) +
   scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Symbiotic", "0" = "Non-symbiotic"), limits=c("1", "0")) + 
+  annotate(geom="text", x=0.7, y=5.8, label="n=526", cex=3.5) +
+  annotate(geom="text", x=1.45, y=4.5, label="n=253", cex=3.5) +
+  annotate(geom="text", x=2.3, y=7.8, label="n=44", cex=3.5) +
+  annotate(geom="text", x=2.4, y=13.5, label="n=24", cex=3.5) +
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
         axis.title.y = element_text(size=13), 
         axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
+        axis.text.x= element_text(size=10),
         legend.title= element_text(size=12), 
         legend.text=element_text(size=12), 
-        legend.position="top")
-
+        legend.position="top", 
+        aspect.ratio=1.8)
+sub_interaction
 # Prep data for specificity on rhizobia 
 ploidy_sub_spec<- ploidy_data1 %>%
   filter(!is.na(Specialist) & !is.na(NewPloidy)) %>%
@@ -399,14 +523,19 @@ sub_spec<-ggplot(ploidy_sub_spec, aes(x=Specialist, y=mean, fill=NewPloidy)) +
   (xlab("Specificity on rhizobia")) +
   scale_fill_manual(name="", labels=c("Diploid", "Polyploid"), values=ploidy_colours[c(6,4)]) +
   scale_x_discrete(labels=c("1" = "Specialist", "0" = "Generalist"), limits=c("1", "0")) + 
+  annotate(geom="text", x=0.7, y=14, label="n=68", cex=3.5) +
+  annotate(geom="text", x=1.4, y=10.9, label="n=29", cex=3.5) +
+  annotate(geom="text", x=2.3, y=16, label="n=36", cex=3.5) +
+  annotate(geom="text", x=2.35, y=31.6, label="n=8", cex=3.5) +
   theme_classic() +
   theme(axis.title.x = element_text(size=13), 
         axis.title.y = element_text(size=13), 
         axis.text.y= element_text(size=12), 
-        axis.text.x= element_text(size=12),
+        axis.text.x= element_text(size=10),
         legend.title= element_text(size=12), 
         legend.text=element_text(size=12), 
-        legend.position="top")
+        legend.position="top", 
+        aspect.ratio=1.8)
 
 # Combine the two plots 
 Figure_raw <- ggarrange(sub_interaction, sub_spec,
@@ -415,5 +544,14 @@ Figure_raw <- ggarrange(sub_interaction, sub_spec,
                     common.legend=TRUE, 
                     legend = "top")
 Figure_raw
+
+ggsave("Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
+
 ```
+
+
+
+
+
+
 
