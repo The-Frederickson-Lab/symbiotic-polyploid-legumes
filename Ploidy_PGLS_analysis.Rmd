@@ -76,7 +76,6 @@ ploidy1<-ploidy%>%
   mutate(Fixer = ifelse(is.na(Fixer) & numOTUs >= 1, 1, Fixer)) %>%
   mutate(Fixer = ifelse(is.na(Fixer) & numGenera >=1 , 1, Fixer)) %>%
   column_to_rownames()
- ploidy1
 
 ```
 
@@ -174,8 +173,6 @@ ploidy_data1 %>%
   group_by(subfamily) %>%
   tally()
 
-ploidy_data1 %>%
-  filter(subfamily=="Mimosoid")
 ```
 
 ### Comparison of genus level and genus+subfamily data 

@@ -1,7 +1,7 @@
 State transitions analysis
 ================
 Tia Harrison
-2022-02-07
+2022-08-24
 
 ## Overall setup
 
@@ -20,6 +20,7 @@ library(dplyr)
 library(phytools)
 library(devtools)
 library(inauguration)
+library(diagram)
 ```
 
 ### Ploidy dataset and phylogeny
@@ -97,7 +98,7 @@ MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
 
     ## State distribution in data:
     ## States:  1   2   3   4   
-    ## Counts:  44  24  523 248 
+    ## Counts:  44  24  526 253 
     ## Beginning thorough optimization search -- performing 0 random restarts 
     ## Finished. Inferring ancestral states using marginal reconstruction.
 
@@ -109,14 +110,14 @@ MK_sub_simple
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -439.7148 895.4296 895.6031        1  839
+    ##  -448.2159 912.4317 912.6036        1  847
     ## 
     ## Rates
     ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)
-    ## (1,R1)          NA 0.018931090 0.005083729          NA
-    ## (2,R1) 0.034298446          NA          NA 0.004529596
-    ## (3,R1) 0.002368807          NA          NA 0.023372010
-    ## (4,R1)          NA 0.000000001 0.077214277          NA
+    ## (1,R1)          NA 0.018953919 0.005085119          NA
+    ## (2,R1) 0.034394196          NA          NA 0.004525548
+    ## (3,R1) 0.002372178          NA          NA 0.023940509
+    ## (4,R1)          NA 0.000000001 0.077784125          NA
     ## 
     ## Arrived at a reliable solution
 
@@ -145,7 +146,7 @@ MK_sub_hidden<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=2)
 
     ## State distribution in data:
     ## States:  1   2   3   4   
-    ## Counts:  44  24  523 248 
+    ## Counts:  44  24  526 253 
     ## Beginning thorough optimization search -- performing 0 random restarts 
     ## Finished. Inferring ancestral states using marginal reconstruction.
 
@@ -157,35 +158,92 @@ MK_sub_hidden
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -386.4806 808.9612 809.7954        2  839
+    ##  -392.8729 821.7458 822.5719        2  847
     ## 
     ## Rates
-    ##              (1,R1)       (2,R1)      (3,R1)      (4,R1)      (1,R2)
-    ## (1,R1)           NA 34.388972603 0.009559160          NA 0.024080467
-    ## (2,R1) 86.663780089           NA          NA 0.000000001          NA
-    ## (3,R1)  0.000000001           NA          NA 0.004433350          NA
-    ## (4,R1)           NA  0.000000001 0.005294327          NA          NA
-    ## (1,R2)  0.016134535           NA          NA          NA          NA
-    ## (2,R2)           NA  0.016134535          NA          NA 0.001123367
-    ## (3,R2)           NA           NA 0.016134535          NA 0.005130183
-    ## (4,R2)           NA           NA          NA 0.016134535          NA
-    ##             (2,R2)       (3,R2)       (4,R2)
-    ## (1,R1)          NA           NA           NA
-    ## (2,R1) 0.024080467           NA           NA
-    ## (3,R1)          NA 2.408047e-02           NA
-    ## (4,R1)          NA           NA  0.024080467
-    ## (1,R2) 0.000000001 1.000000e-09           NA
-    ## (2,R2)          NA           NA  0.007875297
-    ## (3,R2)          NA           NA 18.017677301
-    ## (4,R2) 0.002523890 1.000000e+02           NA
+    ##             (1,R1)      (2,R1)     (3,R1)      (4,R1)      (1,R2)      (2,R2)
+    ## (1,R1)          NA 1.968725819 0.01042501          NA 0.022396033          NA
+    ## (2,R1) 4.415833806          NA         NA 0.000000001          NA 0.022396033
+    ## (3,R1) 0.000000001          NA         NA 0.005563115          NA          NA
+    ## (4,R1)          NA 0.000000001 0.01574161          NA          NA          NA
+    ## (1,R2) 0.013566087          NA         NA          NA          NA 0.000000001
+    ## (2,R2)          NA 0.013566087         NA          NA 0.002600326          NA
+    ## (3,R2)          NA          NA 0.01356609          NA 0.005315245          NA
+    ## (4,R2)          NA          NA         NA 0.013566087          NA 0.003124342
+    ##              (3,R2)       (4,R2)
+    ## (1,R1)           NA           NA
+    ## (2,R1)           NA           NA
+    ## (3,R1)  0.022396033           NA
+    ## (4,R1)           NA  0.022396033
+    ## (1,R2)  0.000000001           NA
+    ## (2,R2)           NA  0.007984013
+    ## (3,R2)           NA 11.436896724
+    ## (4,R2) 67.938307487           NA
     ## 
     ## Arrived at a reliable solution
 
 ``` r
-plotMKmodel(MK_sub_hidden, display = "row")
+# Make two colours for gradient 
+state_colours1<- inauguration("inauguration_2021")
+colour_grad<-state_colours1[c(1,6)]
+
+# Look at the rates 
+plotMKmodel(MK_sub_hidden, color=colour_grad, vertex.scale= 0.5, arrow.scale= 0.8, display = "square")
+
+# Prep data for plotting diagram 
+rate_data<-as.matrix(MK_sub_hidden$solution) # Make a matrix 
+rate_dataR1<-rate_data[1:4, 1:4] # Select the R1 pieces of the matrix 
+rate_dataR1<-round(rate_dataR1, 5) # Round the values in the matrix
+rate_dataR1<-t(rate_dataR1) # Transpose the matrix so the direction is correct
+
+rate_dataR2<-rate_data[5:8, 5:8] # Select the R2 pieces of the matrix 
+rate_dataR2<-round(rate_dataR2, 5) # Round values 
+rate_dataR2<-t(rate_dataR2) # Transpose matrix 
+
+# Manipulate matrix for arrow line width plotting 
+R1_thick<-1+rate_dataR1 
+R2_thick<-1+rate_dataR2
+R1_thick
 ```
 
-![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
+    ##         (1,R1)  (2,R1)  (3,R1)  (4,R1)
+    ## (1,R1)      NA 5.41583 1.00000      NA
+    ## (2,R1) 2.96873      NA      NA 1.00000
+    ## (3,R1) 1.01043      NA      NA 1.01574
+    ## (4,R1)      NA 1.00000 1.00556      NA
+
+``` r
+# Set up plot save 
+pdf("Figure_R1.pdf")
+
+# Make the plot 
+R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
+              name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
+              box.lwd = 1.5, cex.txt = 0.75, curve=0.04, box.col=c("white", "white", "lightgrey", "lightgrey"), shadow.size=0, arr.lwd=R1_thick, arr.type="triangle", 
+              box.size = 0.1, box.type = "square", box.prop = 0.5,
+              main = "Rate Category 1")
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+# Set up plot save 
+pdf("Figure_R2.pdf")
+
+R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
+              name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
+              box.lwd = 1.5, cex.txt = 0.75, curve=0.04, box.col=c("white", "white", "lightgrey", "lightgrey"), shadow.size=0, arr.lwd=R2_thick, arr.type="triangle", 
+              box.size = 0.1, box.type = "square", box.prop = 0.5,
+              main = "Rate Category 2")
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
 
 ## Visualization of transitions
 
@@ -196,28 +254,28 @@ re-label to the corresponding states for ploidy and symbiosis.
 
 ``` r
 # Load colour palettes 
-state_colours1<- inauguration("inauguration_2021")
 state_colours2<- inauguration("bernie_mittens")
 
 # Get the colour codes 
-state_colours1[c(1,2,3,5)]
-```
+color1<-state_colours1[c(2,5,3)]
+color2<-state_colours2[c(2)]
 
-    ## [1] "#5445b1" "#749dae" "#f3c483" "#cd3341"
+# Darken and lighten the colours 
+dark1=colorRampPalette(c("#749dae", "black"))(10)
+lite1=colorRampPalette(c("#749dae", "white"))(10)
+dark2=colorRampPalette(c("#cd3341", "black"))(10)
+lite2=colorRampPalette(c("#cd3341", "white"))(10)
+dark3=colorRampPalette(c("#50506D", "black"))(10)
+lite3=colorRampPalette(c("#50506D", "white"))(10)
+dark4=colorRampPalette(c("#f3c483", "black"))(10)
+lite4=colorRampPalette(c("#f3c483", "white"))(10)
 
-``` r
-state_colours2[c(1,2,3,4)]
-```
-
-    ## [1] "#372421" "#50506D" "#855F4C" "#465952"
-
-``` r
 # Combine colours for for plotting 
-state_colours8<-setNames(c("#cd3341", "#749dae", "#5445b1", "#372421", "#50506D", "#465952", "#f3c483", "#855F4C"),
+state_colours8<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#A2BDC9", "#DD7780", "#8A8A9D", "#F7D7AC"),
                          c("1", "2", "3", "4", "5", "6", "7", "8")) 
 
 # Colours and labels for the legend
-legend_colours<-setNames(c("#cd3341", "#749dae", "#5445b1", "#372421", "#50506D", "#465952", "#f3c483", "#855F4C"),
+legend_colours<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#A2BDC9", "#DD7780", "#8A8A9D", "#F7D7AC"),
                          c("non-symbiotic, diploid, R1", "non-symbiotic, polyploid, R1", "symbiotic, diploid, R1", "symbiotic, polyploid, R1", "non-symbiotic, diploid, R2", "non-symbiotic, polyploid, R2", "symbiotic, diploid, R2", "symbiotic, polyploid, R2")) 
 ```
 
@@ -235,12 +293,89 @@ model_sub_hidden = MK_sub_hidden$solution
 model_sub_hidden[is.na(model_sub_hidden)] <- 0
 diag(model_sub_hidden) <- -rowSums(model_sub_hidden)
 
+# Set up plot save 
+pdf("Figure_transition_tree.pdf")
+
 # Run to get simmap 
 simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
 # Import phytools plotSimmap for plotting
-phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.05, type="fan")
-phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15, offset=3, type="fan")
+
+dev.off()
 ```
 
-![](State_transitions_analysis_files/figure-gfm/plot-1.png)<!-- -->
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+# Set up plot save 
+pdf("Figure_transition_legend.pdf")
+
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
+phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+Split up the figure into multiple panels with different colours. One
+panel that just shows the rate classes, one panel that just shows the 4
+categories, and one panel that has all the information (rates and 4
+categories).
+
+``` r
+# Colours for two rate classes 
+state_colours_rate<-setNames(c("black", "black", "black", "black", "grey", "grey", "grey", "grey"),
+                         c("1", "2", "3", "4", "5", "6", "7", "8")) 
+
+# Set up plot save 
+pdf("Figure_transition_rates.pdf")
+
+# Run to get simmap 
+simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
+
+# Import phytools plotSimmap for plotting
+phytools::plotSimmap(simmap_sub_hidden_R[[1]], colors=state_colours_rate, fsize = 0.15, offset=3, type="fan")
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+# Legend for the two rate classes 
+# Set up plot save 
+pdf("Figure_transition_rates_legend.pdf")
+
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours_rate, fsize = 0.01, offset=3, type="fan")
+phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+# Set up plot save 
+pdf("Figure_transition_4.pdf")
+
+# Now the tree with the four classes 
+state_colours4<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#5A7A87", "#9F2732", "#3E3E54", "#BD9865"),
+                         c("1", "2", "3", "4", "5", "6", "7", "8")) 
+
+# Run to get simmap 
+simmap_sub_hidden_4 <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
+
+# Import phytools plotSimmap for plotting
+phytools::plotSimmap(simmap_sub_hidden_4[[1]], colors=state_colours4, fsize = 0.15, offset=3, type="fan")
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
