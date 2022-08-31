@@ -106,7 +106,7 @@ Traits:
 
 ```{r simple model}
 # Set seed for reproducibility 
-set.seed(35)
+set.seed(135)
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -158,11 +158,11 @@ rate_dataR2<-round(rate_dataR2, 5) # Round values
 rate_dataR2<-t(rate_dataR2) # Transpose matrix 
 
 # Manipulate matrix for arrow line width plotting 
-R1_thick<-rate_dataR1/10 
-R2_thick<-rate_dataR2/10
+R1_thick<-1+rate_dataR1 
+R2_thick<-1+rate_dataR2
 
 # Set up plot save 
-pdf("Figure_R1.pdf")
+# pdf("Figure_R1.pdf")
 
 # Make the plot 
 R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
@@ -171,10 +171,10 @@ R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 1")
 
-dev.off()
+# dev.off()
 
 # Set up plot save 
-pdf("Figure_R2.pdf")
+# pdf("Figure_R2.pdf")
 
 R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
@@ -182,7 +182,7 @@ R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 2")
 
-dev.off()
+# dev.off()
 
 
 ```
@@ -238,7 +238,7 @@ model_sub_hidden[is.na(model_sub_hidden)] <- 0
 diag(model_sub_hidden) <- -rowSums(model_sub_hidden)
 
 # Set up plot save 
-pdf("Figure_transition_tree.pdf")
+# pdf("Figure_transition_tree.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
@@ -246,15 +246,15 @@ simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, m
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15, offset=3, type="fan")
 
-dev.off()
+# dev.off()
 
 # Set up plot save 
-pdf("Figure_transition_legend.pdf")
+# pdf("Figure_transition_legend.pdf")
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 
-dev.off()
+# dev.off()
 
 ```
 
@@ -266,7 +266,7 @@ state_colours_rate<-setNames(c("black", "black", "black", "black", "grey", "grey
                          c("1", "2", "3", "4", "5", "6", "7", "8")) 
 
 # Set up plot save 
-pdf("Figure_transition_rates.pdf")
+# pdf("Figure_transition_rates.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
@@ -274,21 +274,21 @@ simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden,
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden_R[[1]], colors=state_colours_rate, fsize = 0.15, offset=3, type="fan")
 
-dev.off()
+# dev.off()
 
 
 # Legend for the two rate classes 
 # Set up plot save 
-pdf("Figure_transition_rates_legend.pdf")
+# pdf("Figure_transition_rates_legend.pdf")
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours_rate, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 
-dev.off()
+# dev.off()
 
 
 # Set up plot save 
-pdf("Figure_transition_4.pdf")
+# pdf("Figure_transition_4.pdf")
 
 # Now the tree with the four classes 
 state_colours4<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#5A7A87", "#9F2732", "#3E3E54", "#BD9865"),
@@ -300,7 +300,7 @@ simmap_sub_hidden_4 <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden,
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden_4[[1]], colors=state_colours4, fsize = 0.15, offset=3, type="fan")
 
-dev.off()
+# dev.off()
 
 ```
 

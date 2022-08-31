@@ -93,7 +93,7 @@ nonmutualist diploid 2 = nonmutualist polyploid 3 = mutualist diploid 4
 
 ``` r
 # Set seed for reproducibility 
-set.seed(35)
+set.seed(135)
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -113,14 +113,14 @@ MK_sub_simple
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -448.2159 912.4318 912.6037        1  847
+    ##  -448.2159 912.4317 912.6036        1  847
     ## 
     ## Rates
-    ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)
-    ## (1,R1)          NA 0.018962815 0.005080092          NA
-    ## (2,R1) 0.034427771          NA          NA 0.004534031
-    ## (3,R1) 0.002371503          NA          NA 0.023961636
-    ## (4,R1)          NA 0.000000001 0.077895873          NA
+    ##            (1,R1)      (2,R1)      (3,R1)     (4,R1)
+    ## (1,R1)         NA 0.018961657 0.005083292         NA
+    ## (2,R1) 0.03442228          NA          NA 0.00453052
+    ## (3,R1) 0.00237122          NA          NA 0.02394291
+    ## (4,R1)         NA 0.000000001 0.077781660         NA
     ## 
     ## Arrived at a reliable solution
 
@@ -160,28 +160,28 @@ MK_sub_hidden
 
     ## 
     ## Fit
-    ##       -lnL     AIC     AICc Rate.cat ntax
-    ##  -392.9535 821.907 822.7331        2  847
+    ##       -lnL      AIC     AICc Rate.cat ntax
+    ##  -396.2791 828.5581 829.3842        2  847
     ## 
     ## Rates
     ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)      (1,R2)      (2,R2)
-    ## (1,R1)          NA 1.524948697 0.000000001          NA 0.016044246          NA
-    ## (2,R1) 7.151505985          NA          NA 0.000000001          NA 0.016044246
-    ## (3,R1) 0.000000001          NA          NA 0.005544238          NA          NA
-    ## (4,R1)          NA 0.000000001 0.022551333          NA          NA          NA
-    ## (1,R2) 0.020499301          NA          NA          NA          NA 0.016143298
-    ## (2,R2)          NA 0.020499301          NA          NA 0.004726804          NA
-    ## (3,R2)          NA          NA 0.020499301          NA 0.005612824          NA
-    ## (4,R2)          NA          NA          NA 0.020499301          NA 0.000000001
-    ##              (3,R2)       (4,R2)
-    ## (1,R1)           NA           NA
-    ## (2,R1)           NA           NA
-    ## (3,R1)   0.01604425           NA
-    ## (4,R1)           NA  0.016044246
-    ## (1,R2)   0.01727692           NA
-    ## (2,R2)           NA  0.007173617
-    ## (3,R2)           NA 16.958903239
-    ## (4,R2) 100.00000000           NA
+    ## (1,R1)          NA 2.023730181 0.010365276          NA 0.017173855          NA
+    ## (2,R1) 4.175013514          NA          NA 0.000000001          NA 0.017173855
+    ## (3,R1) 0.000000001          NA          NA 0.002727148          NA          NA
+    ## (4,R1)          NA 0.000000001 0.004255697          NA          NA          NA
+    ## (1,R2) 0.008523471          NA          NA          NA          NA 0.000000001
+    ## (2,R2)          NA 0.008523471          NA          NA 0.004496358          NA
+    ## (3,R2)          NA          NA 0.008523471          NA 0.006251182          NA
+    ## (4,R2)          NA          NA          NA 0.008523471          NA 0.002143506
+    ##              (3,R2)      (4,R2)
+    ## (1,R1)           NA          NA
+    ## (2,R1)           NA          NA
+    ## (3,R1) 0.0171738551          NA
+    ## (4,R1)           NA 0.017173855
+    ## (1,R2) 0.0004479304          NA
+    ## (2,R2)           NA 0.007846165
+    ## (3,R2)           NA 0.222786191
+    ## (4,R2) 0.6760569677          NA
     ## 
     ## Arrived at a reliable solution
 
@@ -204,11 +204,11 @@ rate_dataR2<-round(rate_dataR2, 5) # Round values
 rate_dataR2<-t(rate_dataR2) # Transpose matrix 
 
 # Manipulate matrix for arrow line width plotting 
-R1_thick<-rate_dataR1/10 
-R2_thick<-rate_dataR2/10
+R1_thick<-1+rate_dataR1 
+R2_thick<-1+rate_dataR2
 
 # Set up plot save 
-pdf("Figure_R1.pdf")
+# pdf("Figure_R1.pdf")
 
 # Make the plot 
 R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
@@ -216,16 +216,15 @@ R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
               box.lwd = 1.5, cex.txt = 0.75, curve=0.04, box.col=c("white", "white", "lightgrey", "lightgrey"), shadow.size=0, arr.lwd=R1_thick, arr.type="triangle", 
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 1")
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
 
 ``` r
+# dev.off()
+
 # Set up plot save 
-pdf("Figure_R2.pdf")
+# pdf("Figure_R2.pdf")
 
 R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
@@ -233,13 +232,10 @@ R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 2")
 
-dev.off()
+# dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
-
-![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
+![](State_transitions_analysis_files/figure-gfm/hidden%20model-2.png)<!-- -->
 
 ## Visualization of transitions
 
@@ -290,32 +286,32 @@ model_sub_hidden[is.na(model_sub_hidden)] <- 0
 diag(model_sub_hidden) <- -rowSums(model_sub_hidden)
 
 # Set up plot save 
-pdf("Figure_transition_tree.pdf")
+# pdf("Figure_transition_tree.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15, offset=3, type="fan")
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/plot-1.png)<!-- -->
 
 ``` r
+# dev.off()
+
 # Set up plot save 
-pdf("Figure_transition_legend.pdf")
+# pdf("Figure_transition_legend.pdf")
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/plot-2.png)<!-- -->
+
+``` r
+# dev.off()
+```
 
 Split up the figure into multiple panels with different colours. One
 panel that just shows the rate classes, one panel that just shows the 4
@@ -328,37 +324,37 @@ state_colours_rate<-setNames(c("black", "black", "black", "black", "grey", "grey
                          c("1", "2", "3", "4", "5", "6", "7", "8")) 
 
 # Set up plot save 
-pdf("Figure_transition_rates.pdf")
+# pdf("Figure_transition_rates.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden_R[[1]], colors=state_colours_rate, fsize = 0.15, offset=3, type="fan")
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ``` r
+# dev.off()
+
+
 # Legend for the two rate classes 
 # Set up plot save 
-pdf("Figure_transition_rates_legend.pdf")
+# pdf("Figure_transition_rates_legend.pdf")
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours_rate, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
 
 ``` r
+# dev.off()
+
+
 # Set up plot save 
-pdf("Figure_transition_4.pdf")
+# pdf("Figure_transition_4.pdf")
 
 # Now the tree with the four classes 
 state_colours4<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#5A7A87", "#9F2732", "#3E3E54", "#BD9865"),
@@ -369,9 +365,10 @@ simmap_sub_hidden_4 <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden,
 
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden_4[[1]], colors=state_colours4, fsize = 0.15, offset=3, type="fan")
-
-dev.off()
 ```
 
-    ## quartz_off_screen 
-    ##                 2
+![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-3.png)<!-- -->
+
+``` r
+# dev.off()
+```
