@@ -1,7 +1,7 @@
 State transitions analysis
 ================
 Tia Harrison
-2022-08-24
+2022-08-31
 
 ## Overall setup
 
@@ -92,6 +92,9 @@ nonmutualist diploid 2 = nonmutualist polyploid 3 = mutualist diploid 4
 = mutualist polyploid
 
 ``` r
+# Set seed for reproducibility 
+set.seed(35)
+
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
 ```
@@ -110,14 +113,14 @@ MK_sub_simple
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -448.2159 912.4317 912.6036        1  847
+    ##  -448.2159 912.4318 912.6037        1  847
     ## 
     ## Rates
     ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)
-    ## (1,R1)          NA 0.018953919 0.005085119          NA
-    ## (2,R1) 0.034394196          NA          NA 0.004525548
-    ## (3,R1) 0.002372178          NA          NA 0.023940509
-    ## (4,R1)          NA 0.000000001 0.077784125          NA
+    ## (1,R1)          NA 0.018962815 0.005080092          NA
+    ## (2,R1) 0.034427771          NA          NA 0.004534031
+    ## (3,R1) 0.002371503          NA          NA 0.023961636
+    ## (4,R1)          NA 0.000000001 0.077895873          NA
     ## 
     ## Arrived at a reliable solution
 
@@ -157,28 +160,28 @@ MK_sub_hidden
 
     ## 
     ## Fit
-    ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -392.8729 821.7458 822.5719        2  847
+    ##       -lnL     AIC     AICc Rate.cat ntax
+    ##  -392.9535 821.907 822.7331        2  847
     ## 
     ## Rates
-    ##             (1,R1)      (2,R1)     (3,R1)      (4,R1)      (1,R2)      (2,R2)
-    ## (1,R1)          NA 1.968725819 0.01042501          NA 0.022396033          NA
-    ## (2,R1) 4.415833806          NA         NA 0.000000001          NA 0.022396033
-    ## (3,R1) 0.000000001          NA         NA 0.005563115          NA          NA
-    ## (4,R1)          NA 0.000000001 0.01574161          NA          NA          NA
-    ## (1,R2) 0.013566087          NA         NA          NA          NA 0.000000001
-    ## (2,R2)          NA 0.013566087         NA          NA 0.002600326          NA
-    ## (3,R2)          NA          NA 0.01356609          NA 0.005315245          NA
-    ## (4,R2)          NA          NA         NA 0.013566087          NA 0.003124342
+    ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)      (1,R2)      (2,R2)
+    ## (1,R1)          NA 1.524948697 0.000000001          NA 0.016044246          NA
+    ## (2,R1) 7.151505985          NA          NA 0.000000001          NA 0.016044246
+    ## (3,R1) 0.000000001          NA          NA 0.005544238          NA          NA
+    ## (4,R1)          NA 0.000000001 0.022551333          NA          NA          NA
+    ## (1,R2) 0.020499301          NA          NA          NA          NA 0.016143298
+    ## (2,R2)          NA 0.020499301          NA          NA 0.004726804          NA
+    ## (3,R2)          NA          NA 0.020499301          NA 0.005612824          NA
+    ## (4,R2)          NA          NA          NA 0.020499301          NA 0.000000001
     ##              (3,R2)       (4,R2)
     ## (1,R1)           NA           NA
     ## (2,R1)           NA           NA
-    ## (3,R1)  0.022396033           NA
-    ## (4,R1)           NA  0.022396033
-    ## (1,R2)  0.000000001           NA
-    ## (2,R2)           NA  0.007984013
-    ## (3,R2)           NA 11.436896724
-    ## (4,R2) 67.938307487           NA
+    ## (3,R1)   0.01604425           NA
+    ## (4,R1)           NA  0.016044246
+    ## (1,R2)   0.01727692           NA
+    ## (2,R2)           NA  0.007173617
+    ## (3,R2)           NA 16.958903239
+    ## (4,R2) 100.00000000           NA
     ## 
     ## Arrived at a reliable solution
 
@@ -201,18 +204,9 @@ rate_dataR2<-round(rate_dataR2, 5) # Round values
 rate_dataR2<-t(rate_dataR2) # Transpose matrix 
 
 # Manipulate matrix for arrow line width plotting 
-R1_thick<-1+rate_dataR1 
-R2_thick<-1+rate_dataR2
-R1_thick
-```
+R1_thick<-rate_dataR1/10 
+R2_thick<-rate_dataR2/10
 
-    ##         (1,R1)  (2,R1)  (3,R1)  (4,R1)
-    ## (1,R1)      NA 5.41583 1.00000      NA
-    ## (2,R1) 2.96873      NA      NA 1.00000
-    ## (3,R1) 1.01043      NA      NA 1.01574
-    ## (4,R1)      NA 1.00000 1.00556      NA
-
-``` r
 # Set up plot save 
 pdf("Figure_R1.pdf")
 
@@ -244,6 +238,8 @@ dev.off()
 
     ## quartz_off_screen 
     ##                 2
+
+![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
 
 ## Visualization of transitions
 

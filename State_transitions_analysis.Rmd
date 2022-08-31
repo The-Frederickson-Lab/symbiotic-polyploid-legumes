@@ -105,6 +105,8 @@ Traits:
 4 = mutualist polyploid 
 
 ```{r simple model}
+# Set seed for reproducibility 
+set.seed(35)
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -138,6 +140,9 @@ MK_sub_hidden<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=2)
 # Look at the results of the model 
 MK_sub_hidden
 
+# Plot the model 
+plotMKmodel(MK_sub_hidden)
+
 # Make two colours for gradient 
 state_colours1<- inauguration("inauguration_2021")
 colour_grad<-state_colours1[c(1,6)]
@@ -156,9 +161,8 @@ rate_dataR2<-round(rate_dataR2, 5) # Round values
 rate_dataR2<-t(rate_dataR2) # Transpose matrix 
 
 # Manipulate matrix for arrow line width plotting 
-R1_thick<-1+rate_dataR1 
-R2_thick<-1+rate_dataR2
-R1_thick
+R1_thick<-rate_dataR1/10 
+R2_thick<-rate_dataR2/10
 
 # Set up plot save 
 pdf("Figure_R1.pdf")
