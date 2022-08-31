@@ -140,9 +140,6 @@ MK_sub_hidden<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=2)
 # Look at the results of the model 
 MK_sub_hidden
 
-# Plot the model 
-plotMKmodel(MK_sub_hidden)
-
 # Make two colours for gradient 
 state_colours1<- inauguration("inauguration_2021")
 colour_grad<-state_colours1[c(1,6)]
