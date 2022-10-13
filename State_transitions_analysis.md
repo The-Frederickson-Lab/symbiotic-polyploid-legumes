@@ -1,7 +1,7 @@
 State transitions analysis
 ================
 Tia Harrison
-2022-08-31
+2022-10-13
 
 ## Overall setup
 
@@ -92,8 +92,8 @@ nonmutualist diploid 2 = nonmutualist polyploid 3 = mutualist diploid 4
 = mutualist polyploid
 
 ``` r
-# Set seed for reproducibility 
-set.seed(135)
+# Set seed for reproducibility 135
+set.seed(118)
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -112,15 +112,19 @@ MK_sub_simple
 
     ## 
     ## Fit
-    ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -448.2159 912.4317 912.6036        1  847
+    ##      -lnL      AIC     AICc Rate.cat ntax
+    ##  -448.216 912.4319 912.6038        1  847
+    ## 
+    ## Legend
+    ##     1     2     3     4 
+    ## "0_0" "0_1" "1_0" "1_1" 
     ## 
     ## Rates
-    ##            (1,R1)      (2,R1)      (3,R1)     (4,R1)
-    ## (1,R1)         NA 0.018961657 0.005083292         NA
-    ## (2,R1) 0.03442228          NA          NA 0.00453052
-    ## (3,R1) 0.00237122          NA          NA 0.02394291
-    ## (4,R1)         NA 0.000000001 0.077781660         NA
+    ##             (1,R1)      (2,R1)      (3,R1)     (4,R1)
+    ## (1,R1)          NA 0.018970157 0.005083216         NA
+    ## (2,R1) 0.034455941          NA          NA 0.00452797
+    ## (3,R1) 0.002372067          NA          NA 0.02397849
+    ## (4,R1)          NA 0.000000001 0.077956973         NA
     ## 
     ## Arrived at a reliable solution
 
@@ -161,27 +165,31 @@ MK_sub_hidden
     ## 
     ## Fit
     ##       -lnL      AIC     AICc Rate.cat ntax
-    ##  -396.2791 828.5581 829.3842        2  847
+    ##  -398.3266 832.6532 833.4793        2  847
+    ## 
+    ## Legend
+    ##     1     2     3     4 
+    ## "0_0" "0_1" "1_0" "1_1" 
     ## 
     ## Rates
-    ##             (1,R1)      (2,R1)      (3,R1)      (4,R1)      (1,R2)      (2,R2)
-    ## (1,R1)          NA 2.023730181 0.010365276          NA 0.017173855          NA
-    ## (2,R1) 4.175013514          NA          NA 0.000000001          NA 0.017173855
-    ## (3,R1) 0.000000001          NA          NA 0.002727148          NA          NA
-    ## (4,R1)          NA 0.000000001 0.004255697          NA          NA          NA
-    ## (1,R2) 0.008523471          NA          NA          NA          NA 0.000000001
-    ## (2,R2)          NA 0.008523471          NA          NA 0.004496358          NA
-    ## (3,R2)          NA          NA 0.008523471          NA 0.006251182          NA
-    ## (4,R2)          NA          NA          NA 0.008523471          NA 0.002143506
-    ##              (3,R2)      (4,R2)
-    ## (1,R1)           NA          NA
-    ## (2,R1)           NA          NA
-    ## (3,R1) 0.0171738551          NA
-    ## (4,R1)           NA 0.017173855
-    ## (1,R2) 0.0004479304          NA
-    ## (2,R2)           NA 0.007846165
-    ## (3,R2)           NA 0.222786191
-    ## (4,R2) 0.6760569677          NA
+    ##             (1,R1)      (2,R1)     (3,R1)      (4,R1)       (1,R2)      (2,R2)
+    ## (1,R1)          NA 1.465637426 0.02405909          NA 0.0434532777          NA
+    ## (2,R1) 3.678635885          NA         NA 0.000000001           NA 0.043453278
+    ## (3,R1) 0.004818012          NA         NA 0.222271433           NA          NA
+    ## (4,R1)          NA 0.000000001 0.69794593          NA           NA          NA
+    ## (1,R2) 0.020652127          NA         NA          NA           NA 0.000000001
+    ## (2,R2)          NA 0.020652127         NA          NA 0.0000000010          NA
+    ## (3,R2)          NA          NA 0.02065213          NA 0.0007636173          NA
+    ## (4,R2)          NA          NA         NA 0.020652127           NA 0.000000001
+    ##             (3,R2)      (4,R2)
+    ## (1,R1)          NA          NA
+    ## (2,R1)          NA          NA
+    ## (3,R1) 0.043453278          NA
+    ## (4,R1)          NA 0.043453278
+    ## (1,R2) 0.000000001          NA
+    ## (2,R2)          NA 0.000000001
+    ## (3,R2)          NA 0.000000001
+    ## (4,R2) 0.000583391          NA
     ## 
     ## Arrived at a reliable solution
 
@@ -208,7 +216,7 @@ R1_thick<-1+rate_dataR1
 R2_thick<-1+rate_dataR2
 
 # Set up plot save 
-# pdf("Figure_R1.pdf")
+pdf("Figure_R1.pdf")
 
 # Make the plot 
 R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
@@ -216,15 +224,16 @@ R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
               box.lwd = 1.5, cex.txt = 0.75, curve=0.04, box.col=c("white", "white", "lightgrey", "lightgrey"), shadow.size=0, arr.lwd=R1_thick, arr.type="triangle", 
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 1")
+
+dev.off()
 ```
 
-![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
+    ## quartz_off_screen 
+    ##                 2
 
 ``` r
-# dev.off()
-
 # Set up plot save 
-# pdf("Figure_R2.pdf")
+pdf("Figure_R2.pdf")
 
 R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
@@ -232,10 +241,13 @@ R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               box.size = 0.1, box.type = "square", box.prop = 0.5,
               main = "Rate Category 2")
 
-# dev.off()
+dev.off()
 ```
 
-![](State_transitions_analysis_files/figure-gfm/hidden%20model-2.png)<!-- -->
+    ## quartz_off_screen 
+    ##                 2
+
+![](State_transitions_analysis_files/figure-gfm/hidden%20model-1.png)<!-- -->
 
 ## Visualization of transitions
 
@@ -264,7 +276,7 @@ lite4=colorRampPalette(c("#f3c483", "white"))(10)
 
 # Combine colours for for plotting 
 state_colours8<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#A2BDC9", "#DD7780", "#8A8A9D", "#F7D7AC"),
-                         c("1", "2", "3", "4", "5", "6", "7", "8")) 
+                         c("(0_0,R1)", "(0_1,R1)", "(1_0,R1)", "(1_1,R1)", "(0_0,R2)", "(0_1,R2)", "(1_0,R2)", "(1_1,R2)")) 
 
 # Colours and labels for the legend
 legend_colours<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#A2BDC9", "#DD7780", "#8A8A9D", "#F7D7AC"),
@@ -285,9 +297,6 @@ model_sub_hidden = MK_sub_hidden$solution
 model_sub_hidden[is.na(model_sub_hidden)] <- 0
 diag(model_sub_hidden) <- -rowSums(model_sub_hidden)
 
-# Set up plot save 
-# pdf("Figure_transition_tree.pdf")
-
 # Run to get simmap 
 simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
@@ -298,20 +307,74 @@ phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15
 ![](State_transitions_analysis_files/figure-gfm/plot-1.png)<!-- -->
 
 ``` r
-# dev.off()
+# Figure out the subfamilies 
+unique(ploidy$subfamily)
+```
 
-# Set up plot save 
-# pdf("Figure_transition_legend.pdf")
+    ## [1] "Papilionoideae"   "Mimosoid"         "Caesalpinioideae" NA                
+    ## [5] "Dialioideae"      "Cercidoideae"     "Detarioideae"
 
-phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
-phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
+``` r
+# Papilionoideae Mimosoid Caesalpinioideae Dialioideae Cercidoideae Detarioideae
+
+# Save the subfamily data 
+subfam<-ploidy1 %>%
+  select(subfamily)
+
+# Plot the tree with subfamily labels to get an idea of where to put labels 
+library(ggtree)
+circ <- ggtree(simmap_sub_hidden[[1]], layout = "circular")
+p1 <- gheatmap(circ, subfam, offset=.8, width=.2,
+               colnames_angle=95, colnames_offset_y = .25) +
+    scale_fill_viridis_d(option="D", name="discrete\nvalue")
+p1
 ```
 
 ![](State_transitions_analysis_files/figure-gfm/plot-2.png)<!-- -->
 
 ``` r
-# dev.off()
+# Get the node labels 
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15, offset=3, type="fan")
+nodelabels(cex=0.18)
 ```
+
+![](State_transitions_analysis_files/figure-gfm/plot-3.png)<!-- -->
+
+``` r
+# Put the subfamily labels on the black and white figure below 
+
+# Set up plot save the phylogeny with the full information 
+pdf("Figure_transition_tree_full.pdf", width =9, height =6.6)
+
+# Run to get simmap 
+simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
+
+# Plot the tree with the proper labels 
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.15, offset=3, type="fan")
+arc.cladelabels(text="Papilionoideae",node=1043,ln.offset=1.15,lab.offset=1.2, cex=0.6, col="grey", mark.node=FALSE) 
+# arc.cladelabels(text="Mimosoid",node=912,ln.offset=1.1,lab.offset=1.15) # Give the clade labels based on internal node labels rather than tip labels (specifying tips will be too )
+arc.cladelabels(text="Cercidoideae",node=849,ln.offset=1.15,lab.offset=1.2, orientation="horizontal", cex=0.6, mark.node=FALSE)
+arc.cladelabels(text="Caesalpinioideae",node=875,ln.offset=1.15,lab.offset=1.2, cex=0.6, mark.node=FALSE)
+arc.cladelabels(text="Detarioideae",node=865,ln.offset=1.15,lab.offset=1.2, cex=0.6, orientation="horizontal", col="grey", mark.node=FALSE)
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
+
+``` r
+# Set up plot save 
+pdf("Figure_transition_legend_full.pdf")
+
+phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
+phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
+
+dev.off()
+```
+
+    ## quartz_off_screen 
+    ##                 2
 
 Split up the figure into multiple panels with different colours. One
 panel that just shows the rate classes, one panel that just shows the 4
@@ -321,24 +384,25 @@ categories).
 ``` r
 # Colours for two rate classes 
 state_colours_rate<-setNames(c("black", "black", "black", "black", "grey", "grey", "grey", "grey"),
-                         c("1", "2", "3", "4", "5", "6", "7", "8")) 
+                         c("(0_0,R1)", "(0_1,R1)", "(1_0,R1)", "(1_1,R1)", "(0_0,R2)", "(0_1,R2)", "(1_0,R2)", "(1_1,R2)")) 
 
 # Set up plot save 
-# pdf("Figure_transition_rates.pdf")
+pdf("Figure_transition_rates.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
 # Import phytools plotSimmap for plotting
+# Put the subfamily labels on this one 
 phytools::plotSimmap(simmap_sub_hidden_R[[1]], colors=state_colours_rate, fsize = 0.15, offset=3, type="fan")
+
+dev.off()
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+    ## quartz_off_screen 
+    ##                 2
 
 ``` r
-# dev.off()
-
-
 # Legend for the two rate classes 
 # Set up plot save 
 # pdf("Figure_transition_rates_legend.pdf")
@@ -347,28 +411,27 @@ phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours_rate, fsize = 
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
+![](State_transitions_analysis_files/figure-gfm/plot%20subfamilies-1.png)<!-- -->
 
 ``` r
 # dev.off()
 
 
 # Set up plot save 
-# pdf("Figure_transition_4.pdf")
+pdf("Figure_transition_4.pdf")
 
 # Now the tree with the four classes 
 state_colours4<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#5A7A87", "#9F2732", "#3E3E54", "#BD9865"),
-                         c("1", "2", "3", "4", "5", "6", "7", "8")) 
+                         c("(0_0,R1)", "(0_1,R1)", "(1_0,R1)", "(1_1,R1)", "(0_0,R2)", "(0_1,R2)", "(1_0,R2)", "(1_1,R2)")) 
 
 # Run to get simmap 
 simmap_sub_hidden_4 <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
 
 # Import phytools plotSimmap for plotting
 phytools::plotSimmap(simmap_sub_hidden_4[[1]], colors=state_colours4, fsize = 0.15, offset=3, type="fan")
+
+dev.off()
 ```
 
-![](State_transitions_analysis_files/figure-gfm/unnamed-chunk-1-3.png)<!-- -->
-
-``` r
-# dev.off()
-```
+    ## quartz_off_screen 
+    ##                 2

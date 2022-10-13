@@ -1,7 +1,7 @@
 PGLS analysis
 ================
 Tia Harrison
-2022-08-24
+2022-10-13
 
 ## Overall setup
 
@@ -237,7 +237,7 @@ ploidy_data1 %>%
 
     ## # A tibble: 232 × 2
     ##    Genus            n
-    ##    <fct>        <int>
+    ##    <chr>        <int>
     ##  1 Abrus            1
     ##  2 Acacia          63
     ##  3 Acmispon         3
@@ -302,7 +302,7 @@ ploidy_data1 %>%
 
     ## # A tibble: 7 × 2
     ##   subfamily            n
-    ##   <fct>            <int>
+    ##   <chr>            <int>
     ## 1 Caesalpinioideae    36
     ## 2 Cercidoideae        11
     ## 3 Detarioideae        11
@@ -1099,9 +1099,9 @@ Anova(model_lev_q, type=3)
 level_plot <- ggplot(ploidy_data1, aes(x=PloidyLow, y=Num_Introduced, color=Fixer)) + 
   geom_point(alpha=0.7, position="jitter") +
   geom_smooth(method=lm) +
-  scale_x_discrete(limit=c("1","2", "3", "4", "5", "6", "7", "8", "9")) +
+  scale_x_discrete(limit=c("1","2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")) +
   labs(y="Introduced ranges (no.)", x= "Ploidy level") +
-  scale_color_manual(labels=c("0"="non-symbiotic", "1"="symbiotic"), values=c("grey", "black")) +
+  scale_color_manual(labels=c("0"="non-symbiotic", "1"="symbiotic"), values=c("blue", "orange")) +
   theme_classic() +
   theme(legend.title=element_blank())
 # Look at the plot 

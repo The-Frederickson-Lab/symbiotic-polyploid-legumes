@@ -350,9 +350,9 @@ Anova(model_lev_q, type=3)
 level_plot <- ggplot(ploidy_data1, aes(x=PloidyLow, y=Num_Introduced, color=Fixer)) + 
   geom_point(alpha=0.7, position="jitter") +
   geom_smooth(method=lm) +
-  scale_x_discrete(limit=c("1","2", "3", "4", "5", "6", "7", "8", "9")) +
+  scale_x_discrete(limit=c("1","2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")) +
   labs(y="Introduced ranges (no.)", x= "Ploidy level") +
-  scale_color_manual(labels=c("0"="non-symbiotic", "1"="symbiotic"), values=c("grey", "black")) +
+  scale_color_manual(labels=c("0"="non-symbiotic", "1"="symbiotic"), values=c("blue", "orange")) +
   theme_classic() +
   theme(legend.title=element_blank())
 # Look at the plot 
@@ -539,7 +539,8 @@ Figure_raw <- ggarrange(sub_interaction, sub_spec,
                     labels=c("a", "b"), 
                     ncol = 2, nrow=1,
                     common.legend=TRUE, 
-                    legend = "top")
+                    legend = "top") + 
+                    bgcolor("white") 
 Figure_raw
 
 ggsave("Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
