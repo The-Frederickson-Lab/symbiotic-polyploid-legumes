@@ -1,8 +1,11 @@
 # Analysis for "Symbiosis with rhizobia limits range expansion only in polyploid legumes"
 
-Tia Harrison Oct 5 2021
+Tia Harrison Oct 13 2022
 
-This repository stores data and code for our analysis in our paper to be submitted to New Phytologist as a rapid report. 
+This repository stores data and code for our analysis in the paper: 
+
+Parshuram ZA, Harrison TL, Simonsen AK, Stinchcombe JR, Frederickson ME. "Non-symbiotic legumes are more invasive, but only if polyploid"
+ 
 
 ## Summary 
 
