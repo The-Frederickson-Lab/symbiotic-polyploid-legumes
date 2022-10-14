@@ -1,4 +1,4 @@
-# Analysis for "Symbiosis with rhizobia limits range expansion only in polyploid legumes"
+# Analysis for "Non-symbiotic legumes are more invasive, but only if polyploid"
 
 Tia Harrison Oct 13 2022
 
