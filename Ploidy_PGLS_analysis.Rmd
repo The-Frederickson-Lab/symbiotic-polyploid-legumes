@@ -543,7 +543,8 @@ Figure_raw <- ggarrange(sub_interaction, sub_spec,
                     bgcolor("white") 
 Figure_raw
 
-ggsave("Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
+# To save the figure 
+ggsave("Figures/Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
 
 ```
 

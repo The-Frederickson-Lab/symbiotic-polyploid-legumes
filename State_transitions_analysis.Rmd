@@ -105,7 +105,7 @@ Traits:
 
 ```{r simple model}
 # Set seed for reproducibility 135
-set.seed(118)
+set.seed(5348)
 
 # Simple model with two traits and no hidden states 
 MK_sub_simple<- corHMM(phy=sub_tree, data=ploidy_sub2, rate.cat=1)
@@ -161,7 +161,7 @@ R1_thick<-1+rate_dataR1
 R2_thick<-1+rate_dataR2
 
 # Set up plot save 
-pdf("Figure_R1.pdf")
+pdf("Figures/Figure_R1.pdf") # To save the figure 
 
 # Make the plot 
 R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
@@ -173,7 +173,7 @@ R1_plot<-plotmat(rate_dataR1, pos=c(1,2,1),
 dev.off()
 
 # Set up plot save 
-pdf("Figure_R2.pdf")
+pdf("Figures/Figure_R2.pdf")
 
 R2_plot<-plotmat(rate_dataR2, pos=c(1,2,1),
               name = c(" non-symbiotic \ndiploid", " non-symbiotic \npolyploid", " symbiotic \ndiploid",  " symbiotic \npolyploid"),
@@ -263,7 +263,7 @@ nodelabels(cex=0.18)
 # Put the subfamily labels on the black and white figure below 
 
 # Set up plot save the phylogeny with the full information 
-pdf("Figure_transition_tree_full.pdf", width =9, height =6.6)
+pdf("Figures/Figure_transition_tree_full.pdf", width =9, height =6.6)
 
 # Run to get simmap 
 simmap_sub_hidden <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
@@ -278,13 +278,10 @@ arc.cladelabels(text="Detarioideae",node=865,ln.offset=1.15,lab.offset=1.2, cex=
 
 dev.off()
 
-# Set up plot save 
-pdf("Figure_transition_legend_full.pdf")
+# Set up plot to get the legend
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours8, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
-
-dev.off()
 
 ```
 
@@ -296,7 +293,7 @@ state_colours_rate<-setNames(c("black", "black", "black", "black", "grey", "grey
                          c("(0_0,R1)", "(0_1,R1)", "(1_0,R1)", "(1_1,R1)", "(0_0,R2)", "(0_1,R2)", "(1_0,R2)", "(1_1,R2)")) 
 
 # Set up plot save 
-pdf("Figure_transition_rates.pdf")
+pdf("Figures/Figure_transition_rates.pdf")
 
 # Run to get simmap 
 simmap_sub_hidden_R <- makeSimmap(tree = phy_sub_hidden, data = data_sub_hidden, model = model_sub_hidden, rate.cat = 2)
@@ -309,17 +306,13 @@ dev.off()
 
 
 # Legend for the two rate classes 
-# Set up plot save 
-# pdf("Figure_transition_rates_legend.pdf")
 
 phytools::plotSimmap(simmap_sub_hidden[[1]], colors=state_colours_rate, fsize = 0.01, offset=3, type="fan")
 phytools::add.simmap.legend(colors=legend_colours, fsize=0.7, prompt=FALSE, x=-120, y=70, vertical=TRUE)
 
-# dev.off()
-
 
 # Set up plot save 
-pdf("Figure_transition_4.pdf")
+pdf("Figures/Figure_transition_4.pdf")
 
 # Now the tree with the four classes 
 state_colours4<-setNames(c("#5A7A87", "#9F2732", "#3E3E54", "#BD9865", "#5A7A87", "#9F2732", "#3E3E54", "#BD9865"),

@@ -1652,12 +1652,14 @@ Figure_raw <- ggarrange(sub_interaction, sub_spec,
                     labels=c("a", "b"), 
                     ncol = 2, nrow=1,
                     common.legend=TRUE, 
-                    legend = "top")
+                    legend = "top") + 
+                    bgcolor("white") 
 Figure_raw
 ```
 
 ![](Ploidy_PGLS_analysis_files/figure-gfm/plot-2.png)<!-- -->
 
 ``` r
-ggsave("Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
+# To save the figure 
+ggsave("Figures/Figure_raw_pub.tiff", plot=Figure_raw, device="tiff")
 ```
